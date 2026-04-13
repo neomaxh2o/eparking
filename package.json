@@ -1,0 +1,53 @@
+{
+  "name": "e-parking",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "lint:eslint": "eslint .",
+    "validate:caja-turnos": "tsc --noEmit src/modules/caja src/modules/turnos src/models/Ticket.ts src/app/hooks/Parking/Caja src/app/components/Parking/Estadias",
+    "validate:caja-turnos-v2": "eslint src/modules/caja src/modules/turnos src/app/api/v2/caja src/app/api/v2/turno src/models/Ticket.ts src/models/Turno.ts src/app/hooks/Parking/Caja/useIngreso.ts src/app/components/Parking/Estadias/TurnoPanel.tsx src/app/components/Parking/Estadias/IngresoEstadia.tsx src/app/components/Parking/Estadias/SalidaEstadia.tsx",
+    "test:e2e": "bash ./scripts/e2e-caja.sh"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.7",
+    "@react-google-maps/api": "^2.20.7",
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "dayjs": "^1.11.18",
+    "framer-motion": "^12.23.12",
+    "jsbarcode": "^3.12.1",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.536.0",
+    "mongoose": "^8.17.0",
+    "next": "^15.5.2",
+    "next-auth": "^4.24.11",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.1.0",
+    "react-datepicker": "^8.7.0",
+    "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0",
+    "react-qr-code": "^2.0.18"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/google.maps": "^3.58.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20",
+    "@types/react": "^19.1.12",
+    "@types/react-datepicker": "^6.2.0",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.5",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

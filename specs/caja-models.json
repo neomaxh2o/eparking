@@ -1,0 +1,52 @@
+{
+  "Shift": {
+    "collection": "shifts",
+    "schema": {
+      "storeId": {"type":"ObjectId","required":true,"index":true},
+      "openedBy": {"type":"ObjectId","required":true},
+      "openedAt": {"type":"Date","required":true,"default":"Date.now"},
+      "closedBy": {"type":"ObjectId","default":null},
+      "closedAt": {"type":"Date","default":null},
+      "status": {"type":"String","enum":["open","closed","suspended"],"required":true,"default":"open"},
+      "startingCash": {"type":"Number","required":true,"min":0},
+      "expectedCash": {"type":"Number","required":true,"default":0},
+      "actualCash": {"type":"Number","default":null},
+      "ticketsCount": {"type":"Number","default":0},
+      "ticketsTotal": {"type":"Number","default":0},
+      "cashMovementsTotal": {"type":"Number","default":0},
+      "notes": {"type":"String","default":""}
+    },
+    "options": {"timestamps": true}
+  },
+  "Ticket": {
+    "collection": "tickets",
+    "schema": {
+      "shiftId": {"type":"ObjectId","required":true,"index":true},
+      "storeId": {"type":"ObjectId","required":true},
+      "createdBy": {"type":"ObjectId","required":true},
+      "createdAt": {"type":"Date","required":true,"default":"Date.now"},
+      "status": {"type":"String","enum":["pending","paid","voided"],"required":true,"default":"paid"},
+      "total": {"type":"Number","required":true,"min":0},
+      "items": {"type":"Array","default":[]},
+      "paymentMethod": {"type":"String","enum":["cash","card","other"],"required":true},
+      "payments": {"type":"Array","default":[]},
+      "notes": {"type":"String","default":""}
+    },
+    "options": {"timestamps": true}
+  },
+  "CashMovement": {
+    "collection": "cashmovements",
+    "schema": {
+      "shiftId": {"type":"ObjectId","default":null},
+      "storeId": {"type":"ObjectId","required":true},
+      "createdBy": {"type":"ObjectId","required":true},
+      "createdAt": {"type":"Date","required":true,"default":"Date.now"},
+      "type": {"type":"String","enum":["in","out","adjustment"],"required":true},
+      "amount": {"type":"Number","required":true,"min":1},
+      "direction": {"type":"String","enum":["in","out"],"required":true},
+      "reason": {"type":"String","default":""},
+      "reference": {"type":"String","default":""}
+    },
+    "options": {"timestamps": true}
+  }
+}

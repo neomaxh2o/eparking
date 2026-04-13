@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "eParking - Caja & Turnos (example)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Open Shift",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "http://localhost:3010/api/shifts/open",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"storeId\": \"69dc887dd9a014acc4f9267a\",\n  \"startingCash\": 100000,\n  \"notes\": \"Open shift example\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Ticket",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "http://localhost:3010/api/tickets",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"shiftId\": \"REPLACE_SHIFT_ID\",\n  \"storeId\": \"69dc887dd9a014acc4f9267a\",\n  \"items\": [ { \"sku\": \"S1\", \"name\": \"Estadia 1h\", \"qty\": 1, \"unitPrice\": 300000 } ],\n  \"paymentMethod\": \"cash\",\n  \"payments\": [ { \"method\": \"cash\", \"amount\": 300000 } ]\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Close Shift",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "http://localhost:3010/api/shifts/REPLACE_SHIFT_ID/close",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"actualCash\": 300000, \"notes\": \"Close example\" }"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Shift Report",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3010/api/reports/shift/REPLACE_SHIFT_ID"
+      },
+      "response": []
+    }
+  ]
+}

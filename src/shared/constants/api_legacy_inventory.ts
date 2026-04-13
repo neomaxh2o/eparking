@@ -1,0 +1,14 @@
+export const API_LEGACY_INVENTORY = {
+  parking: 'ACTIVE_LEGACY_WITH_ADAPTER',
+  caja: 'ACTIVE_LEGACY_WITH_V2_MIGRATION',
+  subscriptions: 'REVIEW_NEEDED',
+  estadias: 'ACTIVE_LEGACY_DOMAIN',
+  plazas: 'ACTIVE_LEGACY_WITH_ADAPTER',
+  tarifas: 'ACTIVE_LEGACY_DOMAIN',
+  estadias2: 'REMOVE_OR_REWRITE',
+  users: 'STABILIZED_RUNTIME',
+  auth: 'ACTIVE_CORE',
+  tickets: 'ACTIVE_LEGACY_WITH_ADAPTER',
+  turnos: 'ACTIVE_V2_CANONICAL',
+  abonados: 'ACTIVE_V2_CANONICAL',
+} as const;
