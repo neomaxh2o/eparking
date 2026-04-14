@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import connectToDatabase from '../lib/mongoose';
+import connectToDatabase from '../mongoose';
 
 export function buildHealthPayload(service = 'eparking') {
   const env = process.env.NODE_ENV || 'development';
