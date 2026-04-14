@@ -31,7 +31,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurnoChange, externalTurno }) => {
   const { data: session } = useSession();
-  const { turno: turnoHook, abrir, loading, error, cerrar, liquidar, registrarCobro } = useTurnoAdmin(parkinglotId);
+  const { turno: turnoHook, abrir, loadingFetch, loadingOpen, loadingClose, loadingLiquidar, loadingCobro, error, cerrar, liquidar, registrarCobro } = useTurnoAdmin(parkinglotId);
 
   // prefer externalTurno (passed from parent) when present; otherwise use hook turno
   const turno = externalTurno ?? turnoHook;
@@ -120,7 +120,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      {loading ? (
+      {loadingFetch ? (
         <div className="dashboard-section p-6 text-center text-gray-500 font-medium">Cargando turno...</div>
       ) : turno ? (
         <div className="space-y-6">
@@ -132,7 +132,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
               </div>
 
               <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                <span className={`h-2.5 w-2.5 rounded-full ${turno.estado === 'abierto' ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                <span className={`h-2.5 w-2.5 rounded-full ${turno.estado === 'ABIERTO' ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
                 {turno.estado}
               </div>
             </div>
@@ -149,7 +149,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
             <div className="mt-4 flex gap-3">
               {turno.estado === 'abierto' ? (
                 <>
-                  <button onClick={async () => {
+                  <button disabled={loadingClose} onClick={async () => {
                     
                     try {
                       const ok = await cerrar();
@@ -174,7 +174,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
                     }
                   }} className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">Cerrar turno administrativo</button>
 
-                  <button onClick={async () => {
+                  <button disabled={loadingLiquidar} onClick={async () => {
                     
                     try {
                       const result = await liquidar();
@@ -198,7 +198,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
                     }
                   }} className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">Liquidar turno</button>
 
-                  <button onClick={async () => {
+                  <button disabled={loadingCobro} onClick={async () => {
                     
                     const monto = Number(prompt('Monto cobrado (ej: 100)') || 0);
                     if (monto <= 0) return;
@@ -249,7 +249,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
         <div className="dashboard-section p-8 text-center">
           <h3 className="text-xl font-bold text-gray-900">Sin turno administrativo abierto</h3>
           <p className="mt-2 text-sm text-gray-500">Abrí un turno administrativo para comenzar a registrar cobros.</p>
-          <button onClick={abrirTurno} className="mt-5 rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300">Abrir Turno administrativo</button>
+          <button disabled={loadingOpen} onClick={abrirTurno} className="mt-5 rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300">Abrir Turno administrativo</button>
           {error ? <p className="mt-3 text-red-600">{error}</p> : null}
         </div>
       )}
