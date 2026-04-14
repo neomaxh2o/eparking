@@ -4,12 +4,13 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongoose';
 import ParkingLot from '@/models/ParkingLot';
 
-function validateBillingProfile(body: any) {
-  const enabled = Boolean(body?.enabled ?? false);
-  const businessName = String(body?.businessName ?? '').trim();
-  const documentNumber = String(body?.documentNumber ?? '').trim();
-  const pointOfSale = String(body?.pointOfSale ?? '').trim();
-  const email = String(body?.email ?? '').trim();
+function validateBillingProfile(body: unknown) {
+  const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+  const enabled = Boolean(b?.enabled ?? false);
+  const businessName = String(b?.businessName ?? '').trim();
+  const documentNumber = String(b?.documentNumber ?? '').trim();
+  const pointOfSale = String(b?.pointOfSale ?? '').trim();
+  const email = String(b?.email ?? '').trim();
 
   if (!enabled) {
     return null;
@@ -32,7 +33,7 @@ function validateBillingProfile(body: any) {
   }
 
   const digitsOnly = documentNumber.replace(/\D/g, '');
-  const documentType = String(body?.documentType ?? 'cuit');
+  const documentType = String(b?.documentType ?? 'cuit');
   if (documentType === 'cuit' && digitsOnly.length !== 11) {
     return 'El CUIT debe tener 11 dígitos.';
   }
@@ -59,15 +60,15 @@ export async function GET(
   const query: Record<string, unknown> = { _id: parkinglotId };
   if (session.user.role === 'owner') query.owner = session.user.id;
 
-  const parking = await ParkingLot.findOne(query).lean();
+  const parking = await ParkingLot.findOne(query).lean<Record<string, unknown> | null>();
   if (!parking) {
     return NextResponse.json({ error: 'Playa no encontrada' }, { status: 404 });
   }
 
   return NextResponse.json({
-    parkinglotId: String((parking as any)._id),
-    parkingName: String((parking as any).name ?? ''),
-    billingProfile: (parking as any).billingProfile ?? {},
+    parkinglotId: String(parking._id),
+    parkingName: String(parking.name ?? ''),
+    billingProfile: parking.billingProfile ?? {},
   }, { status: 200 });
 }
 
