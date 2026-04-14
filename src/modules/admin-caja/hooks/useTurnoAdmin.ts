@@ -115,7 +115,11 @@ export function useTurnoAdmin(parkinglotId?: string) {
 
   return {
     turno,
-    loading,
+    loadingFetch,
+    loadingOpen,
+    loadingClose,
+    loadingLiquidar,
+    loadingCobro,
     error,
     fetchTurno,
     abrir,
