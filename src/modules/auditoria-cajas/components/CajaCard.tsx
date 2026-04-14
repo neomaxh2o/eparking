@@ -7,10 +7,10 @@ export default function CajaCard({ caja, onOpenTurno, onOpenReporte, onOpenDetal
         <div>
           <div><strong>{caja.code}</strong></div>
           <div>Operador: {caja.operador || '-'}</div>
-          <div>Estado: {caja.turnoAbierto? 'Abierto':'Cerrado'}</div>
+          <div>Estado: {caja.turnoAbiertoNormalized ? 'Abierto' : 'Cerrado'}</div>
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <button onClick={()=>onOpenTurno(caja.id)}>Abrir turno</button>
+          <button disabled={Boolean(caja.turnoAbiertoNormalized)} onClick={()=>onOpenTurno(caja.id)}>Abrir turno</button>
           <button onClick={()=>onOpenReporte(caja.turnoId)}>Abrir reporte</button>
           <button onClick={()=>onOpenDetalle(caja.id)}>Detalle</button>
         </div>
