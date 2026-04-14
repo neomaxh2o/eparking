@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { buildHealthPayload } from '../../../../src/lib/health/index';
+import { buildHealthPayload } from '../../../lib/health/index';
 
 export async function GET() {
   try {
