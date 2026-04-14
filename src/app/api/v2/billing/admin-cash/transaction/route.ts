@@ -30,14 +30,15 @@ export async function POST(req: NextRequest) {
     }
 
     // create movement
+    const turnoOid = String((turno && (turno._id ?? (turno as any).id)) ?? turnoId);
     const movimiento = await CajaMovimiento.create({
-      turnoId: (turno as any)?._id ?? turnoId,
+      turnoId: turnoOid,
       sourceType: 'ajuste',
       sourceId: idOperacion ?? '',
       amount: amountNum,
       paymentMethod: paymentMethod ?? '',
       paymentReference: descripcion ?? '',
-      snapshot: { turnoId: String((turno as any)?._id ?? turnoId) },
+      snapshot: { turnoId: turnoOid },
       actorRole: 'admin',
     });
 
