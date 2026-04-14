@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import Abonado from '@/models/Abonado';
 import AbonadoInvoice from '@/models/AbonadoInvoice';
+import type { AbonadoDoc, InvoiceDoc } from '@/lib/types/documents';
+import { toClientAbonado } from '@/lib/serializers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,66 +14,54 @@ export async function GET(req: NextRequest) {
     if (!q) return NextResponse.json({ error: 'query requerido' }, { status: 400 });
 
     // try numeric search (numeroAbonado)
-    let abonado = null;
+    let abonado: AbonadoDoc | null = null;
     if (/^\d+$/.test(q)) {
-      abonado = await Abonado.findOne({ numeroAbonado: Number(q) }).lean();
+      abonado = await Abonado.findOne({ numeroAbonado: Number(q) }).lean<AbonadoDoc>();
     }
 
     // try dni
     if (!abonado) {
-      abonado = await Abonado.findOne({ dni: q }).lean();
+      abonado = await Abonado.findOne({ dni: q }).lean<AbonadoDoc>();
     }
 
     // try patente in vehiculos
     if (!abonado) {
-      abonado = await Abonado.findOne({ 'vehiculos.patente': q }).lean();
+      abonado = await Abonado.findOne({ 'vehiculos.patente': q }).lean<AbonadoDoc>();
     }
 
     // try name partial
     if (!abonado) {
-      abonado = await Abonado.findOne({ $or: [{ nombre: q }, { apellido: q }, { nombre: new RegExp(q, 'i') }, { apellido: new RegExp(q, 'i') }] }).lean();
+      abonado = await Abonado.findOne({ $or: [{ nombre: q }, { apellido: q }, { nombre: new RegExp(q, 'i') }, { apellido: new RegExp(q, 'i') }] }).lean<AbonadoDoc>();
     }
 
     if (!abonado) return NextResponse.json({ abonado: null, facturas: [], vencidas: [], saldoTotal: 0, estado: 'AL_DIA' }, { status: 200 });
 
     // fetch invoices for abonado
-    const facturasRaw = await AbonadoInvoice.find({ abonadoId: abonado._id }).sort({ fechaEmision: -1 }).lean();
+    const facturasRaw = await AbonadoInvoice.find({ abonadoId: abonado._id }).sort({ fechaEmision: -1 }).lean<InvoiceDoc[]>();
     const facturas = Array.isArray(facturasRaw) ? facturasRaw : [];
     const now = new Date();
 
     const vencidas = facturas.filter((f) => {
-      if (!f || typeof f !== 'object') return false;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ff = f as any;
-      if (ff.estado === 'pagada') return false;
-      if (!ff.fechaVencimiento) return false;
+      if (!f) return false;
+      if (f.estado === 'pagada') return false;
+      if (!f.fechaVencimiento) return false;
       try {
-        return new Date(String(ff.fechaVencimiento)) < now;
+        return new Date(String(f.fechaVencimiento)) < now;
       } catch (_) {
         return false;
       }
     });
 
     const saldoTotal = facturas.reduce((acc, f) => {
-      if (!f || typeof f !== 'object') return acc;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ff = f as any;
-      const monto = Number(ff.monto || 0) || 0;
-      return acc + monto * (ff.estado === 'pagada' ? 0 : 1);
+      if (!f) return acc;
+      const monto = Number(f.monto || 0) || 0;
+      return acc + monto * (f.estado === 'pagada' ? 0 : 1);
     }, 0);
 
     const estado = saldoTotal > 0 ? 'CON_DEUDA' : 'AL_DIA';
 
-    // Return safe abonado object (omit sensitive fields)
-    const safeAbonado = {
-      _id: String((abonado as any)._id),
-      numeroAbonado: (abonado as any).numeroAbonado,
-      nombre: (abonado as any).nombre,
-      apellido: (abonado as any).apellido,
-      dni: (abonado as any).dni,
-      telefono: (abonado as any).telefono,
-      assignedParking: (abonado as any).assignedParking ?? null,
-    };
+    // Safe abonado object
+    const safeAbonado = toClientAbonado(abonado);
 
     return NextResponse.json({ abonado: safeAbonado, facturas, vencidas, saldoTotal, estado }, { status: 200 });
   } catch (err: unknown) {
