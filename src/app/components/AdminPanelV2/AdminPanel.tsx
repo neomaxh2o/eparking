@@ -37,7 +37,7 @@ export default function AdminPanel() {
 
   const areaTabs = useMemo<Record<AdminAreaKey, AreaTabConfig[]>>(() => ({
     operacion: [
-      { key: 'facturacion', label: 'Abrir turno', content: <PanelFacturacion /> },
+      { key: 'facturacion', label: 'Facturación', content: <PanelFacturacion /> },
       { key: 'reservations', label: 'Reservas', content: <PanelReservas /> },
       ...(userRole === 'owner' || userRole === 'admin'
         ? [{ key: 'historico-cajas' as const, label: 'Histórico de cajas', content: <PanelHistoricoCajas /> }]

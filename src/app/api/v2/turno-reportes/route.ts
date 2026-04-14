@@ -5,7 +5,11 @@ import { requireOwnerAdminSession } from '@/lib/turno-report-auth';
 
 export async function GET(req: Request) {
   try {
-    const session = await requireOwnerAdminSession();
+    const auth = await requireOwnerAdminSession();
+    if (!auth?.authorized) {
+      return NextResponse.json({ error: auth?.error || 'No autenticado' }, { status: auth?.status || 401 });
+    }
+    const session = auth.session;
     await connectToDatabase();
 
     const { searchParams } = new URL(req.url);

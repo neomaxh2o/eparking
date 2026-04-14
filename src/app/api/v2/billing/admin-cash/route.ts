@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongoose';
 import Turno from '@/models/Turno';
+import ParkingLot from '@/models/ParkingLot';
+import User from '@/models/User';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -51,6 +53,25 @@ export async function POST(req: NextRequest) {
 
   if (!Number.isFinite(cajaNumero) || cajaNumero <= 0) {
     return NextResponse.json({ error: 'cajaNumero es requerido' }, { status: 400 });
+  }
+
+  // Enforce scope: owner -> only owned parkings, operator -> only assigned parkings. admin -> any
+  let allowedParkingIds: string[] | null = null;
+  if (session.user.role === 'owner') {
+    const ownedParkings = await ParkingLot.find({ owner: session.user.id }).select('_id').lean();
+    allowedParkingIds = ownedParkings.map((p) => String((p as any)._id));
+  } else if (session.user.role === 'operator') {
+    const operator = await User.findById(session.user.id).select('assignedParking').lean();
+    const assigned = Array.isArray((operator as any)?.assignedParking)
+      ? (operator as any).assignedParking
+      : (operator as any)?.assignedParking
+        ? [(operator as any).assignedParking]
+        : [];
+    allowedParkingIds = assigned.map((id: any) => String(id));
+  }
+
+  if (allowedParkingIds && !allowedParkingIds.includes(parkinglotId)) {
+    return NextResponse.json({ error: 'La playa indicada no pertenece al alcance del usuario logueado.' }, { status: 403 });
   }
 
   const existing = await Turno.findOne({

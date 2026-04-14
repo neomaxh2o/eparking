@@ -1,42 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import OpenTurnoWidget from './OpenTurnoWidget';
-import FinancialOperationsMock from './FinancialOperationsMock';
 import { Tab } from '@headlessui/react';
 import BillingDocumentsList from '@/modules/billing/components/BillingDocumentsList';
 import ParkingBillingProfileQuickEditor from '@/modules/billing/components/ParkingBillingProfileQuickEditor';
 import type { BillingDocument } from '@/modules/billing/types/billing.types';
-import BillingControls from './BillingControls';
-import {
-  fetchCajasDisponibles as sharedFetchCajasDisponibles,
-  resolveCajaFallback as sharedResolveCajaFallback,
-  toCents as sharedToCents,
-  fromCents as sharedFromCents,
-  logger as sharedLogger,
-} from '@/modules/turnos/shared';
-
-import { createCajaAdministrativa, getCajaActual, closeCaja } from '@/services/cajaService';
-import { saveCajaState, loadCajaState, clearCajaState } from '@/store/caja/actions';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
 export default function PanelFacturacion() {
-  const OPERATIONS_ENABLED = (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_ADMIN_OPERATIONS_ENABLED === 'true');
-  if (!OPERATIONS_ENABLED) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-700">
-          <h3 className="text-lg font-bold">Abrir turno</h3>
-          <p className="mt-2 text-sm text-gray-500">La sección operativa principal está deshabilitada. Usá el formulario de abajo para abrir un turno.</p>
-        </div>
-        <OpenTurnoWidget />
-        <FinancialOperationsMock />
-      </div>
-    );
-  }
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
   const [parkings, setParkings] = useState<any[]>([]);
   const [loadingParkings, setLoadingParkings] = useState(true);
@@ -67,6 +41,7 @@ export default function PanelFacturacion() {
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
   const [adminCashTurno, setAdminCashTurno] = useState<any | null>(null);
   const [loadingAdminCash, setLoadingAdminCash] = useState(false);
+
 
   const fetchBillingDocuments = async () => {
     try {
@@ -100,17 +75,13 @@ export default function PanelFacturacion() {
   const fetchAdminCashTurno = async (nextParkinglotId?: string) => {
     try {
       setLoadingAdminCash(true);
-      const turno = await getCajaActual(nextParkinglotId);
-      setAdminCashTurno(turno);
-      if (turno && turno._id) {
-        saveCajaState({ turnoId: String(turno._id), parkinglotId: String(nextParkinglotId || ''), cajaNumero: Number(turno.numeroCaja ?? turno.cajaNumero ?? null), openedAt: new Date().toISOString() });
-      } else {
-        clearCajaState();
-      }
-    } catch (e) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('fetchAdminCashTurno:error', e);
+      const params = new URLSearchParams();
+      if (nextParkinglotId) params.set('parkinglotId', nextParkinglotId);
+      const res = await fetch(`/api/v2/billing/admin-cash${params.toString() ? `?${params.toString()}` : ''}`);
+      const data = await res.json();
+      setAdminCashTurno(data?.turno ?? null);
+    } catch {
       setAdminCashTurno(null);
-      clearCajaState();
     } finally {
       setLoadingAdminCash(false);
     }
@@ -122,43 +93,42 @@ export default function PanelFacturacion() {
       return;
     }
     // fallback: try to read caja select from DOM if state empty
-    let effectiveCaja = cajaNumero;
-    if (!effectiveCaja) {
+    if (!cajaNumero) {
       const domCaja = (document.getElementById('admin-caja-select') as HTMLSelectElement | null)?.value;
       if (domCaja) {
-        effectiveCaja = domCaja;
+        setCajaNumero(domCaja);
+      }
+    }
+    // fallback rule B: si sigue vacío, calculamos a partir de los últimos 6 hex del parkinglotId -> decimal % 1000
+    if (!cajaNumero && parkinglotId) {
+      try {
+        const hex = String(parkinglotId).slice(-6);
+        const num = parseInt(hex, 16) % 1000;
+        const finalNum = num === 0 ? 1 : num;
+        setCajaNumero(String(finalNum));
+      } catch (e) {
+        // ignore
       }
     }
 
-    try {
-      // if still empty, try fetch available cajas and resolve fallback
-      if (!effectiveCaja) {
-        const disponibles = await sharedFetchCajasDisponibles(parkinglotId || undefined);
-        const fallback = sharedResolveCajaFallback(null, disponibles);
-        if (fallback != null) effectiveCaja = String(fallback);
-      }
-    } catch (e) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('abrirCajaAdministrativa:fetchCajas error', e);
-    }
-
-    if (!effectiveCaja) {
+    if (!cajaNumero) {
       setError('Selecciona una caja para abrir caja administrativa.');
       return;
     }
 
     try {
       setError(null);
-      const turno = await createCajaAdministrativa({ parkinglotId: parkinglotId, cajaNumero: Number(effectiveCaja) });
-      // persist in local store
-      if (turno && turno._id) {
-        saveCajaState({ turnoId: String(turno._id), parkinglotId: String(parkinglotId), cajaNumero: Number(turno.numeroCaja ?? turno.cajaNumero ?? effectiveCaja), openedAt: new Date().toISOString() });
-      }
-      // refresh local turno state
+      const res = await fetch('/api/v2/billing/admin-cash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parkinglotId, cajaNumero }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo abrir la caja administrativa');
       await fetchAdminCashTurno(parkinglotId || undefined);
       setMessage('Caja administrativa abierta correctamente.');
     } catch (err: any) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('abrirCajaAdministrativa:error', err);
-      setError(err?.message || 'Error desconocido');
+      setError(err.message || 'Error desconocido');
     }
   };
 
@@ -170,13 +140,17 @@ export default function PanelFacturacion() {
 
     try {
       setError(null);
-      await closeCaja(adminCashTurno._id);
-      clearCajaState();
+      const res = await fetch('/api/v2/billing/admin-cash', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turnoId: adminCashTurno._id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja administrativa');
       await fetchAdminCashTurno(parkinglotId || undefined);
       setMessage('Caja administrativa cerrada correctamente.');
     } catch (err: any) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('cerrarCajaAdministrativa:error', err);
-      setError(err?.message || 'Error desconocido');
+      setError(err.message || 'Error desconocido');
     }
   };
 
@@ -199,14 +173,17 @@ export default function PanelFacturacion() {
 
   const fetchCajasDisponibles = async (nextParkinglotId?: string) => {
     try {
-      const arr = await sharedFetchCajasDisponibles(nextParkinglotId);
-      setCajasDisponibles(Array.isArray(arr) ? arr : []);
+      const params = new URLSearchParams();
+      if (nextParkinglotId) params.set('parkinglotId', nextParkinglotId);
+      const res = await fetch(`/api/v2/billing/cajas?${params.toString()}`);
+      const data = await res.json();
+      const arr = Array.isArray(data) ? data : [];
+      setCajasDisponibles(arr);
       // Auto-select first caja if none selected
-      if (Array.isArray(arr) && arr.length > 0 && !cajaNumero) {
+      if (arr.length > 0 && !cajaNumero) {
         setCajaNumero(String(arr[0].numero));
       }
-    } catch (e) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('fetchCajasDisponibles:error', e);
+    } catch {
       setCajasDisponibles([]);
     }
   };
@@ -333,7 +310,9 @@ export default function PanelFacturacion() {
       setError(null);
       setMessage(null);
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado }),
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la factura');
@@ -348,11 +327,13 @@ export default function PanelFacturacion() {
     try {
       setError(null);
       setMessage(null);
-      if (!adminCashTurno?._id || !(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())) {
-        throw new Error('Debes abrir una caja administrativa para la playa seleccionada antes de acreditar cobros manuales.');
+      if (!adminCashTurno?._id) {
+        throw new Error('Debes abrir una caja administrativa antes de acreditar cobros manuales.');
       }
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: adminCashTurno._id }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: adminCashTurno._id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo acreditar el pago');
@@ -420,16 +401,9 @@ export default function PanelFacturacion() {
       <div className="dashboard-section p-5 md:p-6 space-y-4">
         <Tab.Group selectedIndex={selectedTabIndex} onChange={(i)=>{
             const cajaIndex = 4; // Documentos=0, Fiscal=1, Cierres=2, Control=3, Caja admin=4
-            if (i !== cajaIndex) {
-              // require parking selected and that turno corresponds to selected parking
-              if (!parkinglotId) {
-                setError('Selecciona una playa primero.');
-                return;
-              }
-              if (!(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId).trim())) {
-                setError('Abrí caja administrativa para la playa seleccionada primero.');
-                return;
-              }
+            if (i !== cajaIndex && !adminCashTurno) {
+              setError('Abrí caja administrativa primero para acceder a esta sección.');
+              return;
             }
             setSelectedTabIndex(i);
           }}>
@@ -466,13 +440,11 @@ export default function PanelFacturacion() {
               {!filteredBillingDocuments.length ? (
                 <p className="text-sm text-gray-500">No hay documentos billing para los filtros seleccionados.</p>
               ) : (
-                <BillingControls enabled={!!(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())}>
-                  <BillingDocumentsList
-                    billingDocumentsByPeriod={billingDocumentsByPeriod}
-                    acreditarDocumento={acreditarDocumento}
-                    marcarDocumento={marcarDocumento}
-                  />
-                </BillingControls>
+                <BillingDocumentsList
+                  billingDocumentsByPeriod={billingDocumentsByPeriod}
+                  acreditarDocumento={acreditarDocumento}
+                  marcarDocumento={marcarDocumento}
+                />
               )}
             </Tab.Panel>
 
@@ -643,17 +615,15 @@ export default function PanelFacturacion() {
                 <button onClick={() => void runFinancialControl()} className="rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300">Ejecutar control financiero</button>
               </div>
 
-              <BillingControls enabled={!!(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())}>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-                  <input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Referencia de pago electrónico" className="rounded-xl border border-gray-300 px-4 py-3" />
-                  <button onClick={() => void reconcilePaymentReference()} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">Conciliar pago</button>
-                </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+                <input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Referencia de pago electrónico" className="rounded-xl border border-gray-300 px-4 py-3" />
+                <button onClick={() => void reconcilePaymentReference()} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">Conciliar pago</button>
+              </div>
 
-                {message ? <p className="text-sm text-green-700">{message}</p> : null}
-                {error ? <p className="text-sm text-red-600">{error}</p> : null}
-                {reconcileSummary ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><p><strong>Referencia conciliada:</strong> {reconcileSummary.paymentReference || '-'}</p><p><strong>Facturas actualizadas:</strong> {reconcileSummary.invoicesUpdated ?? 0}</p><p><strong>Abonados reactivados:</strong> {reconcileSummary.abonadosReactivated ?? 0}</p></div> : null}
-                {financialRunSummary ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700"><p><strong>Última ejecución:</strong> {financialRunSummary.timestamp ? new Date(financialRunSummary.timestamp).toLocaleString() : '-'}</p><p><strong>Facturas revisadas:</strong> {financialRunSummary.invoicesChecked ?? 0}</p><p><strong>Facturas marcadas vencidas:</strong> {financialRunSummary.invoicesMarkedOverdue ?? 0}</p><p><strong>Abonados suspendidos:</strong> {financialRunSummary.abonadosSuspended ?? 0}</p></div> : null}
-              </BillingControls>
+              {message ? <p className="text-sm text-green-700">{message}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {reconcileSummary ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><p><strong>Referencia conciliada:</strong> {reconcileSummary.paymentReference || '-'}</p><p><strong>Facturas actualizadas:</strong> {reconcileSummary.invoicesUpdated ?? 0}</p><p><strong>Abonados reactivados:</strong> {reconcileSummary.abonadosReactivated ?? 0}</p></div> : null}
+              {financialRunSummary ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700"><p><strong>Última ejecución:</strong> {financialRunSummary.timestamp ? new Date(financialRunSummary.timestamp).toLocaleString() : '-'}</p><p><strong>Facturas revisadas:</strong> {financialRunSummary.invoicesChecked ?? 0}</p><p><strong>Facturas marcadas vencidas:</strong> {financialRunSummary.invoicesMarkedOverdue ?? 0}</p><p><strong>Abonados suspendidos:</strong> {financialRunSummary.abonadosSuspended ?? 0}</p></div> : null}
             </Tab.Panel>
 
             <Tab.Panel className="space-y-4">
@@ -693,7 +663,13 @@ export default function PanelFacturacion() {
                     <p><strong>Turno:</strong> {adminCashTurno._id}</p>
                     <p><strong>Playa:</strong> {adminCashTurno.assignedParking || '-'}</p>
                     <p><strong>Caja:</strong> {adminCashTurno.numeroCaja ?? adminCashTurno.cajaNumero ?? '-'}</p>
-                    <button onClick={async () => { await cerrarCajaAdministrativa(); }} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50">Cerrar caja administrativa</button>
+                    <button onClick={async () => {
+                      const res = await fetch('/api/v2/billing/admin-cash', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ turnoId: adminCashTurno._id }) });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja administrativa');
+                      await fetchAdminCashTurno(parkinglotId || undefined);
+                      setMessage('Caja administrativa cerrada correctamente.');
+                    }} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50">Cerrar caja administrativa</button>
                   </>
                 ) : (
                   <>

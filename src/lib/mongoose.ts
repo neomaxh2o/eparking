@@ -26,7 +26,7 @@ async function connectToDatabase(): Promise<typeof mongoose> {
   if (!globalThis.mongooseConnection!.promise) {
     console.log('🔌 Intentando conectar a MongoDB');
     globalThis.mongooseConnection!.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,       // evitar buffering si no hay conexión
+      bufferCommands: true,       // allow buffering until connection is ready (safer in dev)
       serverSelectionTimeoutMS: 10000,
     });
   }
