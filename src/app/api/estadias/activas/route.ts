@@ -11,10 +11,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ error: 'Método no permitido' });
     }
 
-    const estadiasActivas = await Estadia.find({ estado: 'activa' }).sort({ createdAt: -1 });
+    const estadiasActivas = await Estadia.find({ estado: 'activa' }).sort({ createdAt: -1 }).lean<Record<string, unknown>[]>();
     return res.status(200).json(estadiasActivas);
-  } catch (err: any) {
-    console.error('Error API /estadias/activas:', err);
-    return res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    console.error('Error API /estadias/activas:', err instanceof Error ? err.message : String(err));
+    return res.status(500).json({ error: 'error interno' });
   }
 }
