@@ -11,24 +11,28 @@ export async function POST(req: NextRequest) {
 
   try {
     await dbConnect();
-    const body = await req.json().catch(() => ({}));
-    const { turnoId, amount, storeId: bodyStoreId } = body ?? {};
+    const rawBody: unknown = await req.json().catch(() => null);
+    const b = (rawBody && typeof rawBody === 'object') ? (rawBody as Record<string, unknown>) : {};
+    const turnoId = b.turnoId as string | undefined;
+    const amount = b.amount as unknown;
+    const bodyStoreId = b.storeId as string | undefined;
+
     if (!turnoId) return NextResponse.json({ error: 'turnoId requerido' }, { status: 400 });
     const monto = Number(amount ?? 0);
     if (!Number.isFinite(monto) || monto <= 0) return NextResponse.json({ error: 'amount invalido' }, { status: 400 });
 
-    const turno = await Turno.findById(turnoId).lean();
+    const turno = await Turno.findById(turnoId).lean<Record<string, unknown> | null>();
     if (!turno) return NextResponse.json({ error: 'turno no encontrado' }, { status: 404 });
 
     // Permisos: operator asociado o admin/owner
     const role = session.user.role;
     const userId = session.user.id;
-    const turnoOperatorId = String((turno as any).operatorId ?? '');
+    const turnoOperatorId = String((turno as Record<string, unknown>).operatorId ?? '');
     if (role !== 'admin' && role !== 'owner' && String(userId) !== turnoOperatorId) {
       return NextResponse.json({ error: 'No autorizado para registrar cobro en este turno' }, { status: 403 });
     }
 
-    const storeId = bodyStoreId ?? (turno as any).assignedParking ?? null;
+    const storeId = bodyStoreId ?? (turno as Record<string, unknown>).assignedParking ?? null;
     if (!storeId) return NextResponse.json({ error: 'storeId requerido' }, { status: 400 });
 
     const movement = await CashMovement.create({
