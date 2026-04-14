@@ -29,13 +29,17 @@ async function assignAvailableSubplaza(data: Partial<IEstadia>) {
   const plaza: IPlaza | null = await Plaza.findOne({
     categoria: data.tipoEstadia,
     'plazasFisicas.estado': 'disponible',
-  });
+  }).lean<IPlaza | null>();
 
   if (!plaza) {
     return { plazaAsignadaId: undefined, subplazaAsignadaNumero: undefined };
   }
 
-  const subplaza = plaza.plazasFisicas.find((sp) => sp.estado === 'disponible');
+  // plaza obtained via lean is plain object — mutate via model fetch instead when saving
+  const plazaModel = await Plaza.findById(plaza._id);
+  if (!plazaModel) return { plazaAsignadaId: undefined, subplazaAsignadaNumero: undefined };
+
+  const subplaza = plazaModel.plazasFisicas.find((sp) => sp.estado === 'disponible');
   if (!subplaza) {
     return { plazaAsignadaId: undefined, subplazaAsignadaNumero: undefined };
   }
@@ -48,27 +52,32 @@ async function assignAvailableSubplaza(data: Partial<IEstadia>) {
     };
   }
 
-  await plaza.save();
+  await plazaModel.save();
 
   return {
-    plazaAsignadaId: plaza._id.toString(),
+    plazaAsignadaId: plazaModel._id.toString(),
     subplazaAsignadaNumero: subplaza.numero,
   };
 }
 
-async function releaseSubplaza(plazaAsignadaId?: any, subplazaAsignadaNumero?: number) {
+async function releaseSubplaza(plazaAsignadaId?: unknown, subplazaAsignadaNumero?: number) {
   if (!plazaAsignadaId || subplazaAsignadaNumero === undefined) return;
 
-  const plaza: IPlaza | null = await Plaza.findById(plazaAsignadaId);
+  const idStr = String(plazaAsignadaId);
+  const plaza: IPlaza | null = await Plaza.findById(idStr).lean<IPlaza | null>();
   if (!plaza) return;
 
-  const subplaza = plaza.plazasFisicas.find((sp) => sp.numero === subplazaAsignadaNumero);
+  // load model to mutate
+  const plazaModel = await Plaza.findById(idStr);
+  if (!plazaModel) return;
+
+  const subplaza = plazaModel.plazasFisicas.find((sp) => sp.numero === subplazaAsignadaNumero);
   if (!subplaza) return;
 
   subplaza.estado = 'disponible';
   subplaza.estadiaId = null;
   subplaza.usuarioAbonado = null;
-  await plaza.save();
+  await plazaModel.save();
 }
 
 export async function GET(req: NextRequest) {
@@ -84,11 +93,11 @@ export async function GET(req: NextRequest) {
   if (estado) filter.estado = estado as IEstadia['estado'];
 
   try {
-    const estadias = await Estadia.find(filter).sort({ horaEntrada: -1 }).lean();
+    const estadias = await Estadia.find(filter).sort({ horaEntrada: -1 }).lean<Record<string, unknown>[]>();
     return NextResponse.json(estadias, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[api/estadias][GET]', err);
-    return NextResponse.json({ error: err.message || 'Error listando estadías' }, { status: 500 });
+    return NextResponse.json({ error: (err instanceof Error && err.message) ? err.message : 'Error listando estadías' }, { status: 500 });
   }
 }
 
@@ -96,7 +105,8 @@ export async function POST(req: NextRequest) {
   await ensureDbConnection();
 
   try {
-    const data: Partial<IEstadia> = await req.json();
+    const raw: unknown = await req.json().catch(() => null);
+    const data = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
 
     if (!data.operadorId || !data.parkinglotId || !data.tarifaId) {
       return NextResponse.json({ error: 'operadorId, parkinglotId y tarifaId son requeridos' }, { status: 400 });
@@ -107,10 +117,10 @@ export async function POST(req: NextRequest) {
     const tarifaId = toObjectId(data.tarifaId, 'tarifaId');
 
     let plazaAsignadaId = data.plazaAsignadaId;
-    let subplazaAsignadaNumero = data.subplazaAsignadaNumero;
+    let subplazaAsignadaNumero = (data.subplazaAsignadaNumero as number | undefined) ?? undefined;
 
     if (!plazaAsignadaId && data.tipoEstadia) {
-      const assigned = await assignAvailableSubplaza(data);
+      const assigned = await assignAvailableSubplaza(data as Partial<IEstadia>);
       plazaAsignadaId = assigned.plazaAsignadaId;
       subplazaAsignadaNumero = assigned.subplazaAsignadaNumero;
     }
@@ -120,16 +130,16 @@ export async function POST(req: NextRequest) {
       operadorId,
       parkinglotId,
       tarifaId,
-      plazaAsignadaId: plazaAsignadaId && isValidObjectId(plazaAsignadaId) ? new mongoose.Types.ObjectId(plazaAsignadaId) : undefined,
+      plazaAsignadaId: plazaAsignadaId && isValidObjectId(plazaAsignadaId) ? new mongoose.Types.ObjectId(String(plazaAsignadaId)) : undefined,
       subplazaAsignadaNumero,
     });
 
     const saved = await nuevaEstadia.save();
 
     if (plazaAsignadaId && subplazaAsignadaNumero !== undefined) {
-      const plaza: IPlaza | null = await Plaza.findById(plazaAsignadaId);
-      if (plaza) {
-        const subplaza = plaza.plazasFisicas.find((sp) => sp.numero === subplazaAsignadaNumero);
+      const plazaModel = await Plaza.findById(String(plazaAsignadaId));
+      if (plazaModel) {
+        const subplaza = plazaModel.plazasFisicas.find((sp) => sp.numero === subplazaAsignadaNumero);
         if (subplaza) {
           subplaza.estadiaId = saved._id.toString();
           if (saved.tipoEstadia === 'libre') {
@@ -138,15 +148,15 @@ export async function POST(req: NextRequest) {
               patente: saved.patente ?? '',
             };
           }
-          await plaza.save();
+          await plazaModel.save();
         }
       }
     }
 
     return NextResponse.json(saved, { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[api/estadias][POST]', err);
-    return NextResponse.json({ error: err.message || 'Error al crear estadía' }, { status: 400 });
+    return NextResponse.json({ error: (err instanceof Error && err.message) ? err.message : 'Error al crear estadía' }, { status: 400 });
   }
 }
 
@@ -170,23 +180,23 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    const updated = await Estadia.findByIdAndUpdate(data._id, updateFields, {
+    const updated = await Estadia.findByIdAndUpdate(String(data._id), updateFields, {
       new: true,
       runValidators: true,
-    });
+    }).lean<Record<string, unknown> | null>();
 
     if (!updated) {
       return NextResponse.json({ error: 'Estadía no encontrada' }, { status: 404 });
     }
 
-    if (updated.estado === 'cerrada') {
+    if ((updated.estado as unknown) === 'cerrada') {
       await releaseSubplaza(updated.plazaAsignadaId, updated.subplazaAsignadaNumero);
     }
 
     return NextResponse.json(updated, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[api/estadias][PUT]', err);
-    return NextResponse.json({ error: err.message || 'Error al actualizar estadía' }, { status: 400 });
+    return NextResponse.json({ error: (err instanceof Error && err.message) ? err.message : 'Error al actualizar estadía' }, { status: 400 });
   }
 }
 
