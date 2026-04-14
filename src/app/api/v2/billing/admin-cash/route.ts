@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   if (parkinglotId) query.assignedParking = parkinglotId;
 
-  const turno = await Turno.findOne(query).sort({ createdAt: -1 }).lean();
+  const turno = await Turno.findOne(query).sort({ createdAt: -1 }).lean<Record<string, unknown> | null>();
   return NextResponse.json({ turno: turno ?? null }, { status: 200 });
 }
 
@@ -43,9 +43,10 @@ export async function POST(req: NextRequest) {
   }
 
   await dbConnect();
-  const body = await req.json().catch(() => ({}));
-  const parkinglotId = body?.parkinglotId ? String(body.parkinglotId) : null;
-  const cajaNumero = Number(body?.cajaNumero ?? 0);
+  const body: unknown = await req.json().catch(() => null);
+  const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+  const parkinglotId = b?.parkinglotId ? String(b.parkinglotId) : null;
+  const cajaNumero = Number(b?.cajaNumero ?? 0);
 
   if (!parkinglotId) {
     return NextResponse.json({ error: 'parkinglotId es requerido' }, { status: 400 });
@@ -58,16 +59,16 @@ export async function POST(req: NextRequest) {
   // Enforce scope: owner -> only owned parkings, operator -> only assigned parkings. admin -> any
   let allowedParkingIds: string[] | null = null;
   if (session.user.role === 'owner') {
-    const ownedParkings = await ParkingLot.find({ owner: session.user.id }).select('_id').lean();
-    allowedParkingIds = ownedParkings.map((p) => String((p as any)._id));
+    const ownedParkings = await ParkingLot.find({ owner: session.user.id }).select('_id').lean<Record<string, unknown>[]>();
+    allowedParkingIds = ownedParkings.map((p) => String(p._id));
   } else if (session.user.role === 'operator') {
-    const operator = await User.findById(session.user.id).select('assignedParking').lean();
-    const assigned = Array.isArray((operator as any)?.assignedParking)
-      ? (operator as any).assignedParking
-      : (operator as any)?.assignedParking
-        ? [(operator as any).assignedParking]
+    const operator = await User.findById(session.user.id).select('assignedParking').lean<Record<string, unknown> | null>();
+    const assigned = Array.isArray(operator?.assignedParking)
+      ? operator?.assignedParking
+      : operator?.assignedParking
+        ? [operator.assignedParking]
         : [];
-    allowedParkingIds = assigned.map((id: any) => String(id));
+    allowedParkingIds = (assigned as unknown[]).map((id) => String(id));
   }
 
   if (allowedParkingIds && !allowedParkingIds.includes(parkinglotId)) {
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     operatorId: session.user.id,
     estado: 'abierto',
     esCajaAdministrativa: true,
-  }).lean();
+  }).lean<Record<string, unknown> | null>();
 
   if (existing) {
     return NextResponse.json({ error: 'Ya existe una caja administrativa abierta para este usuario.', turno: existing }, { status: 409 });
