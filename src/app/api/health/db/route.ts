@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkMongoConnectionSafe } from '../../../lib/health/index';
+import { checkMongoConnectionSafe } from './_helpers';
 
 export async function GET() {
   try {
