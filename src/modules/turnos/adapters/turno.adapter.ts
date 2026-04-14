@@ -26,17 +26,22 @@ function toIsoString(value: unknown): string | undefined {
 export function adaptTurnoFromLegacy(input: unknown): TurnoCaja {
   const raw = (asRecord(input) ?? {}) as LegacyTurnoRecord;
   const liquidacionRaw = asRecord(raw.liquidacion) as LegacyLiquidacionRecord | null;
-  const estadoRaw = raw.estado;
-  const estado =
-    estadoRaw === 'cerrado' ||
-    estadoRaw === 'pendiente_liquidacion' ||
-    estadoRaw === 'liquidado'
-      ? estadoRaw
-      : 'abierto';
+  const estadoRaw = String(raw.estado ?? '').toLowerCase();
+  const estadoMap: Record<string, string> = {
+    pendiente_liquidacion: 'PENDIENTE_LIQUIDACION',
+    pendiente: 'PENDIENTE',
+    abierto: 'ABIERTO',
+    en_curso: 'EN_CURSO',
+    cerrado: 'CERRADO',
+    liquidado: 'LIQUIDADO',
+  };
+  const estado = estadoMap[estadoRaw] ?? 'ABIERTO';
 
   return {
     _id: String(raw._id ?? ''),
     operatorId: String(raw.operatorId ?? ''),
+    codigoTurno: asString(raw.codigoTurno) ?? asString(raw.codigo) ?? '',
+    numeroTurno: asNumber(raw.numeroTurno) ?? asNumber(raw.numero) ?? asNumber(raw.subturnoNumero) ?? 0,
     fechaApertura: toIsoString(raw.fechaApertura) ?? new Date().toISOString(),
     fechaCierre: toIsoString(raw.fechaCierre),
     tickets: Array.isArray(raw.tickets) ? raw.tickets.map(adaptTicketFromLegacy) : [],

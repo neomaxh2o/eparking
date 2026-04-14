@@ -60,10 +60,13 @@ export async function liquidarTurnoAdmin(turnoId: string, payload: { totalDeclar
 }
 
 export async function registrarCobroAdmin(payload: { turnoId: string; monto: number; paymentMethod?: string; descripcion?: string }) {
+  // client-side idempotency key to help servers that implement it later
+  const idOperacion = `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
+  const body = { ...payload, idOperacion };
   const res = await fetch('/api/v2/billing/admin-cash/transaction', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
     credentials: 'include',
   });
   const json = await ensureOk(res);
