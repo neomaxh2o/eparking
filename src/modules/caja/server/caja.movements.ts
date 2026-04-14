@@ -15,13 +15,21 @@ export async function registerCajaMovimiento(input: {
   snapshot?: Record<string, unknown>;
 }) {
   const turno = input.turnoId ? await Turno.findById(input.turnoId).select('_id parkinglotId assignedParking cajaId cajaCode numeroCaja cajaNumero').lean() : null;
-  const caja = turno && (turno as any).cajaId ? await Caja.findById((turno as any).cajaId).select('_id code numero parkinglotId').lean() : null;
+  const turnoDoc = (turno as unknown) as Record<string, unknown> | null;
+  const caja = turnoDoc && String(turnoDoc.cajaId || '') ? await Caja.findById(String(turnoDoc.cajaId)).select('_id code numero parkinglotId').lean() : null;
+  const cajaDoc = (caja as unknown) as Record<string, unknown> | null;
+
+  const parkinglotId = (turnoDoc?.parkinglotId ?? turnoDoc?.assignedParking ?? cajaDoc?.parkinglotId) ?? null;
+  const cajaId = (turnoDoc?.cajaId ?? cajaDoc?._id) ?? null;
+  const cajaCode = String(turnoDoc?.cajaCode ?? cajaDoc?.code ?? '') || '';
+  const turnoIdResolved = turnoDoc?._id ?? null;
+  const turnoNumeroCaja = Number((turnoDoc?.numeroCaja ?? turnoDoc?.cajaNumero ?? 0)) || null;
 
   return CajaMovimiento.create({
-    parkinglotId: (turno as any)?.parkinglotId ?? (turno as any)?.assignedParking ?? (caja as any)?.parkinglotId ?? null,
-    cajaId: (turno as any)?.cajaId ?? (caja as any)?._id ?? null,
-    cajaCode: (turno as any)?.cajaCode ?? (caja as any)?.code ?? '',
-    turnoId: (turno as any)?._id ?? null,
+    parkinglotId,
+    cajaId,
+    cajaCode,
+    turnoId: turnoIdResolved,
     actorUserId: input.actorUserId ?? null,
     actorRole: input.actorRole ?? 'system',
     sourceType: input.sourceType,
@@ -31,9 +39,9 @@ export async function registerCajaMovimiento(input: {
     paymentReference: input.paymentReference ?? '',
     status: input.status ?? 'registrado',
     snapshot: {
-      ...input.snapshot,
-      turnoNumeroCaja: Number((turno as any)?.numeroCaja ?? (turno as any)?.cajaNumero ?? 0) || null,
-      cajaCode: (turno as any)?.cajaCode ?? (caja as any)?.code ?? '',
-    },
+      ...(input.snapshot ?? {}),
+      turnoNumeroCaja,
+      cajaCode,
+    } as Record<string, unknown>,
   });
 }
