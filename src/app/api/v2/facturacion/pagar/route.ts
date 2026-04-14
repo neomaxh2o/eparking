@@ -7,11 +7,18 @@ import Turno from '@/models/Turno';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const { abonadoId, facturaId, monto, turnoId, cajaNumero, idOperacion } = body || {};
+    const body: unknown = await req.json().catch(() => null);
+    const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+    const abonadoId = b.abonadoId as string | undefined;
+    const facturaId = b.facturaId as string | undefined;
+    const monto = b.monto as unknown;
+    const turnoId = b.turnoId as string | undefined;
+    const cajaNumero = b.cajaNumero as unknown;
+    const idOperacion = b.idOperacion as string | undefined;
 
     if (!abonadoId) return NextResponse.json({ error: 'abonadoId es requerido' }, { status: 400 });
-    if (!monto || Number(monto) <= 0) return NextResponse.json({ error: 'monto inválido' }, { status: 400 });
+    const amountNum = Number(monto);
+    if (!monto || Number.isNaN(amountNum) || amountNum <= 0) return NextResponse.json({ error: 'monto inválido' }, { status: 400 });
 
     await dbConnect();
 
@@ -33,7 +40,7 @@ export async function POST(req: NextRequest) {
     const factura = await AbonadoInvoice.findById(facturaId);
     if (!factura) return NextResponse.json({ error: 'factura no encontrada' }, { status: 404 });
 
-    const amount = Number(monto);
+    const amount = amountNum;
     if (amount < Number(factura.monto || 0)) {
       return NextResponse.json({ error: 'pago parcial no soportado (en esta fase)' }, { status: 400 });
     }
@@ -61,8 +68,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, movimiento, factura }, { status: 201 });
-  } catch (err:any) {
-    console.error('POST /facturacion/pagar error', err?.message || err);
+  } catch (err: unknown) {
+    if (err instanceof Error) console.error('POST /facturacion/pagar error', err.message);
+    else console.error('POST /facturacion/pagar error', String(err));
     return NextResponse.json({ error: 'error interno' }, { status: 500 });
   }
 }

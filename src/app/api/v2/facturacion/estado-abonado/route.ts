@@ -35,27 +35,48 @@ export async function GET(req: NextRequest) {
     if (!abonado) return NextResponse.json({ abonado: null, facturas: [], vencidas: [], saldoTotal: 0, estado: 'AL_DIA' }, { status: 200 });
 
     // fetch invoices for abonado
-    const facturas = await AbonadoInvoice.find({ abonadoId: abonado._id }).sort({ fechaEmision: -1 }).lean();
+    const facturasRaw = await AbonadoInvoice.find({ abonadoId: abonado._id }).sort({ fechaEmision: -1 }).lean();
+    const facturas = Array.isArray(facturasRaw) ? facturasRaw : [];
     const now = new Date();
-    const vencidas = facturas.filter((f:any) => f.estado !== 'pagada' && f.fechaVencimiento && new Date(f.fechaVencimiento) < now);
 
-    const saldoTotal = facturas.reduce((acc:any, f:any) => acc + (Number(f.monto || 0) * (f.estado === 'pagada' ? 0 : 1)), 0);
+    const vencidas = facturas.filter((f) => {
+      if (!f || typeof f !== 'object') return false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ff = f as any;
+      if (ff.estado === 'pagada') return false;
+      if (!ff.fechaVencimiento) return false;
+      try {
+        return new Date(String(ff.fechaVencimiento)) < now;
+      } catch (_) {
+        return false;
+      }
+    });
+
+    const saldoTotal = facturas.reduce((acc, f) => {
+      if (!f || typeof f !== 'object') return acc;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ff = f as any;
+      const monto = Number(ff.monto || 0) || 0;
+      return acc + monto * (ff.estado === 'pagada' ? 0 : 1);
+    }, 0);
+
     const estado = saldoTotal > 0 ? 'CON_DEUDA' : 'AL_DIA';
 
     // Return safe abonado object (omit sensitive fields)
     const safeAbonado = {
-      _id: String(abonado._id),
-      numeroAbonado: abonado.numeroAbonado,
-      nombre: abonado.nombre,
-      apellido: abonado.apellido,
-      dni: abonado.dni,
-      telefono: abonado.telefono,
-      assignedParking: abonado.assignedParking ?? null,
+      _id: String((abonado as any)._id),
+      numeroAbonado: (abonado as any).numeroAbonado,
+      nombre: (abonado as any).nombre,
+      apellido: (abonado as any).apellido,
+      dni: (abonado as any).dni,
+      telefono: (abonado as any).telefono,
+      assignedParking: (abonado as any).assignedParking ?? null,
     };
 
     return NextResponse.json({ abonado: safeAbonado, facturas, vencidas, saldoTotal, estado }, { status: 200 });
-  } catch (err:any) {
-    console.error('GET /facturacion/estado-abonado error', err?.message || err);
+  } catch (err: unknown) {
+    if (err instanceof Error) console.error('GET /facturacion/estado-abonado error', err.message);
+    else console.error('GET /facturacion/estado-abonado error', String(err));
     return NextResponse.json({ error: 'error interno' }, { status: 500 });
   }
 }

@@ -26,6 +26,20 @@ interface Props {
   onRefresh?: () => Promise<void> | void;
 }
 
+function safeJsonMessage(data: unknown, fallback = ''): string {
+  if (data && typeof data === 'object') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const d = data as any;
+      if (typeof d.error === 'string') return d.error;
+      if (typeof d.message === 'string') return d.message;
+    } catch (_) {
+      // fallthrough
+    }
+  }
+  return fallback;
+}
+
 export default function CajaFacturacionAbonadosTab({ operatorId, parkinglotId, turno, loading = false, onRefresh }: Props) {
   const [abonados, setAbonados] = useState<AbonadoCaja[]>([]);
   const [abonadoSearch, setAbonadoSearch] = useState('');
@@ -44,12 +58,21 @@ export default function CajaFacturacionAbonadosTab({ operatorId, parkinglotId, t
       if (parkinglotId) params.set('assignedParking', parkinglotId);
 
       const res = await fetch(`/api/v2/abonados?${params.toString()}`, { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar abonados');
-      setAbonados(Array.isArray(data) ? data : []);
-    } catch (err: any) {
+      const data: unknown = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = safeJsonMessage(data, 'No se pudo cargar abonados');
+        throw new Error(msg);
+      }
+
+      if (Array.isArray(data)) {
+        // best-effort cast — API returns array of abonados
+        setAbonados(data as AbonadoCaja[]);
+      } else {
+        setAbonados([]);
+      }
+    } catch (err: unknown) {
       setAbonados([]);
-      setError(err.message || 'No se pudo cargar abonados');
+      setError(err instanceof Error ? err.message : String(err) || 'No se pudo cargar abonados');
     }
   }, [parkinglotId]);
 
@@ -74,13 +97,16 @@ export default function CajaFacturacionAbonadosTab({ operatorId, parkinglotId, t
           monto: montoFacturacionAbonado ? Number(montoFacturacionAbonado) : undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo facturar el abonado');
+      const data: unknown = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = safeJsonMessage(data, 'No se pudo facturar el abonado');
+        throw new Error(msg);
+      }
       setFacturacionMessage('Factura de abonado emitida correctamente desde el tab de facturación.');
       if (onRefresh) await onRefresh();
       await refreshAbonados();
-    } catch (err: any) {
-      setError(err.message || 'Error facturando abonado');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err) || 'Error facturando abonado');
     } finally {
       setSubmitting(false);
     }
