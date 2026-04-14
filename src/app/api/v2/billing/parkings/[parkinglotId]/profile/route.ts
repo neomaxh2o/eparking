@@ -87,7 +87,8 @@ export async function PATCH(
 
   await dbConnect();
   const { parkinglotId } = await context.params;
-  const body = await req.json().catch(() => ({}));
+  const rawBody: unknown = await req.json().catch(() => null);
+  const body = (rawBody && typeof rawBody === 'object') ? (rawBody as Record<string, unknown>) : {};
 
   const validationError = validateBillingProfile(body);
   if (validationError) {
@@ -102,18 +103,18 @@ export async function PATCH(
     {
       $set: {
         billingProfile: {
-          enabled: Boolean((body as any)?.enabled ?? false),
-          businessName: String((body as any)?.businessName ?? ''),
-          taxCondition: String((body as any)?.taxCondition ?? 'consumidor_final'),
-          documentType: String((body as any)?.documentType ?? 'cuit'),
-          documentNumber: String((body as any)?.documentNumber ?? ''),
-          pointOfSale: String((body as any)?.pointOfSale ?? ''),
-          voucherTypeDefault: String((body as any)?.voucherTypeDefault ?? 'consumidor_final'),
-          iibb: String((body as any)?.iibb ?? ''),
-          address: String((body as any)?.address ?? ''),
-          city: String((body as any)?.city ?? ''),
-          email: String((body as any)?.email ?? ''),
-          phone: String((body as any)?.phone ?? ''),
+          enabled: Boolean(body.enabled ?? false),
+          businessName: String(body.businessName ?? ''),
+          taxCondition: String(body.taxCondition ?? 'consumidor_final'),
+          documentType: String(body.documentType ?? 'cuit'),
+          documentNumber: String(body.documentNumber ?? ''),
+          pointOfSale: String(body.pointOfSale ?? ''),
+          voucherTypeDefault: String(body.voucherTypeDefault ?? 'consumidor_final'),
+          iibb: String(body.iibb ?? ''),
+          address: String(body.address ?? ''),
+          city: String(body.city ?? ''),
+          email: String(body.email ?? ''),
+          phone: String(body.phone ?? ''),
         },
       },
     },
