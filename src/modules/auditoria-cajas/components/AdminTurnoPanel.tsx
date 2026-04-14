@@ -31,7 +31,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurnoChange, externalTurno }) => {
   const { data: session } = useSession();
-  const { turno: turnoHook, abrir, loading, error, cerrar, liquidar, registrarCobro } = useTurnoAdmin(parkinglotId);
+  const { turno: turnoHook, abrir, loadingFetch, loadingOpen, loadingClose, loadingLiquidar, loadingCobro, error, cerrar, liquidar, registrarCobro } = useTurnoAdmin(parkinglotId);
 
   // prefer externalTurno (passed from parent) when present; otherwise use hook turno
   const turno = externalTurno ?? turnoHook;
