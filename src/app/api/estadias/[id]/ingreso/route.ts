@@ -1,36 +1,38 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongoose';
 import Estadia from '@/models/Estadia';
 import { Tarifa } from '@/models/Tarifa';
 import User from '@/models/User';
 import Turno from '@/models/Turno';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    // Desestructuramos los datos del frontend
-    const {
-      patente,
-      categoria,
-      cliente,
-      tarifaId,
-      operatorId,
-      tipoEstadia,
-      cantidad,
-      horaEntrada,
-      tarifaBaseHora,
-      tarifa: montoEstimado
-    } = await req.json();
+    const body: unknown = await req.json().catch(() => ({}));
+    const payload = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+
+    const patente = payload.patente as string | undefined;
+    const categoria = payload.categoria as string | undefined;
+    const cliente = payload.cliente as string | undefined;
+    const tarifaId = payload.tarifaId as string | undefined;
+    const operatorId = payload.operatorId as string | undefined;
+    const tipoEstadia = payload.tipoEstadia as string | undefined;
+    const cantidad = payload.cantidad as number | undefined;
+    const horaEntrada = payload.horaEntrada as string | undefined;
+    const tarifaBaseHora = payload.tarifaBaseHora as number | undefined;
+    const montoEstimado = payload.tarifa as number | undefined;
+
+    if (!operatorId) return NextResponse.json({ error: 'Operador no enviado' }, { status: 400 });
 
     // Validar operador
-    const operator = await User.findById(operatorId);
-    if (!operator || operator.role !== 'operator') {
+    const operator = await User.findById(operatorId).lean<Record<string, unknown> | null>();
+    if (!operator || (operator.role as unknown) !== 'operator') {
       return NextResponse.json({ error: 'Operador no válido' }, { status: 400 });
     }
 
     // Validar tarifa
-    const tarifa = await Tarifa.findById(tarifaId);
+    const tarifa = await Tarifa.findById(tarifaId).lean<Record<string, unknown> | null>();
     if (!tarifa) {
       return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
     }
@@ -39,13 +41,13 @@ export async function POST(req: Request) {
     const ticketNumber = `T-${Date.now()}`;
 
     // Preparar datos de estadía
-    const estadiaData: any = {
+    const estadiaData: Record<string, unknown> = {
       ticketNumber,
       patente,
       categoria,
       cliente,
-      tarifaId: tarifa._id,
-      operadorId: operator._id,
+      tarifaId: tarifa._id ?? tarifaId,
+      operadorId: operator._id ?? operatorId,
       tipoEstadia,
       horaEntrada: horaEntrada ? new Date(horaEntrada) : new Date(),
     };
@@ -53,20 +55,19 @@ export async function POST(req: Request) {
     if (tipoEstadia === 'hora' || tipoEstadia === 'dia') {
       estadiaData.cantidad = cantidad ?? 1;
       estadiaData.tarifa = montoEstimado ?? 0;
-      estadiaData.tarifaBaseHora = tarifaBaseHora ?? tarifa.tarifaHora ?? 0;
+      estadiaData.tarifaBaseHora = tarifaBaseHora ?? (tarifa.tarifaHora as unknown as number) ?? 0;
     }
 
     if (tipoEstadia === 'libre') {
-      estadiaData.tarifaBaseHora = tarifaBaseHora ?? tarifa.tarifaHora ?? 0;
+      estadiaData.tarifaBaseHora = tarifaBaseHora ?? (tarifa.tarifaHora as unknown as number) ?? 0;
       estadiaData.tarifa = montoEstimado ?? estadiaData.tarifaBaseHora;
-      // No usamos cantidad
     }
 
     // Crear la estadía
     const estadia = await Estadia.create(estadiaData);
 
     // Asociar ticket al turno abierto del operador
-    const turno = await Turno.findOne({ operatorId: operator._id.toString(), estado: 'abierto' });
+    const turno = await Turno.findOne({ operatorId: String(operator._id ?? operatorId), estado: 'abierto' });
     if (turno) {
       turno.tickets.push({
         ticketNumber: estadia.ticketNumber,
@@ -77,17 +78,19 @@ export async function POST(req: Request) {
         tipoEstadia: estadia.tipoEstadia,
         horaEntrada: estadia.horaEntrada,
         estado: estadia.estado,
-        totalCobrado: estadia.totalCobrado ?? 0
+        totalCobrado: estadia.totalCobrado ?? 0,
       });
       await turno.save();
     }
 
     return NextResponse.json(estadia, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error en ingreso:', error);
-    if (error.name === 'ValidationError') {
-      return NextResponse.json({ error: error.message, details: error.errors }, { status: 400 });
+    if (error instanceof Error && error.name === 'ValidationError') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = error as any;
+      return NextResponse.json({ error: e.message, details: e.errors }, { status: 400 });
     }
     return NextResponse.json({ error: 'Error registrando ingreso' }, { status: 500 });
   }
