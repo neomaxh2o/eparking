@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     // create movement
-    const turnoOid = String((turno && (turno._id ?? (turno as any).id)) ?? turnoId);
+    const turnoOid = String((turno && (turno._id ?? (turno as Record<string, unknown>).id)) ?? turnoId);
     const movimiento = await CajaMovimiento.create({
       turnoId: turnoOid,
       sourceType: 'ajuste',

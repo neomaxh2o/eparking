@@ -36,24 +36,28 @@ export async function GET() {
     parkings = await ParkingLot.find({}).sort({ createdAt: -1 }).lean<Record<string, unknown>[]>();
   }
 
-  const normalized = parkings.map((parking) => ({
-    _id: String(parking._id),
-    name: String(parking.name ?? ''),
-    owner: parking.owner ? String(parking.owner) : '',
-    location: {
-      lat: Number((parking.location as any)?.lat ?? 0),
-      lng: Number((parking.location as any)?.lng ?? 0),
-      address: String((parking.location as any)?.address ?? ''),
-    },
-    totalSpots: Number(parking.totalSpots ?? 0),
-    availableSpots: Number(parking.availableSpots ?? 0),
-    pricePerHour: Number(parking.pricePerHour ?? 0),
-    schedule: {
-      open: String((parking.schedule as any)?.open ?? ''),
-      close: String((parking.schedule as any)?.close ?? ''),
-    },
-    isAvailable: Boolean(parking.isAvailable ?? true),
-  }));
+  const normalized = parkings.map((parking) => {
+    const loc = (parking.location && typeof parking.location === 'object') ? (parking.location as Record<string, unknown>) : {};
+    const sched = (parking.schedule && typeof parking.schedule === 'object') ? (parking.schedule as Record<string, unknown>) : {};
+    return {
+      _id: String(parking._id),
+      name: String(parking.name ?? ''),
+      owner: parking.owner ? String(parking.owner) : '',
+      location: {
+        lat: Number(loc.lat ?? 0),
+        lng: Number(loc.lng ?? 0),
+        address: String(loc.address ?? ''),
+      },
+      totalSpots: Number(parking.totalSpots ?? 0),
+      availableSpots: Number(parking.availableSpots ?? 0),
+      pricePerHour: Number(parking.pricePerHour ?? 0),
+      schedule: {
+        open: String(sched.open ?? ''),
+        close: String(sched.close ?? ''),
+      },
+      isAvailable: Boolean(parking.isAvailable ?? true),
+    };
+  });
 
   return NextResponse.json(normalized, { status: 200 });
 }
