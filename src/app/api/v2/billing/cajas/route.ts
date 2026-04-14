@@ -23,16 +23,12 @@ export async function GET(req: NextRequest) {
   let allowedParkingIds: string[] | null = null;
 
   if (session.user.role === 'owner') {
-    const ownedParkings = await ParkingLot.find({ owner: session.user.id }).select('_id').lean();
-    allowedParkingIds = ownedParkings.map((parking) => String((parking as any)._id));
+    const ownedParkings = await ParkingLot.find({ owner: session.user.id }).select('_id').lean<Record<string, unknown>[]>();
+    allowedParkingIds = ownedParkings.map((parking) => String(parking._id));
   } else if (session.user.role === 'operator') {
-    const operator = await User.findById(session.user.id).select('assignedParking').lean();
-    const assigned = Array.isArray((operator as any)?.assignedParking)
-      ? (operator as any).assignedParking
-      : (operator as any)?.assignedParking
-        ? [(operator as any).assignedParking]
-        : [];
-    allowedParkingIds = assigned.map((id: any) => String(id));
+    const operator = await User.findById(session.user.id).select('assignedParking').lean<Record<string, unknown> | null>();
+    const assigned = Array.isArray(operator?.assignedParking) ? operator.assignedParking : operator?.assignedParking ? [operator.assignedParking] : [];
+    allowedParkingIds = (assigned as unknown[]).map((id) => String(id));
   }
 
   if (parkinglotId) {
@@ -47,8 +43,8 @@ export async function GET(req: NextRequest) {
   if (allowedParkingIds) {
     const operators = await User.find({ assignedParking: { $in: allowedParkingIds }, role: 'operator' })
       .select('_id')
-      .lean();
-    operatorIds = operators.map((operator) => String((operator as any)._id));
+      .lean<Record<string, unknown>[]>();
+    operatorIds = operators.map((operator) => String(operator._id));
   }
 
   const turnoQuery: Record<string, unknown> = {};
@@ -58,12 +54,12 @@ export async function GET(req: NextRequest) {
     turnoQuery.operatorId = { $in: operatorIds };
   }
 
-  const turnos = await Turno.find(turnoQuery).select('numeroCaja cajaNumero operatorId').lean();
+  const turnos = await Turno.find(turnoQuery).select('numeroCaja cajaNumero operatorId').lean<Record<string, unknown>[]>();
 
   const cajas = Array.from(
     new Set(
       turnos
-        .map((turno: any) => Number(turno.numeroCaja ?? turno.cajaNumero ?? 0))
+        .map((turno) => Number((turno.numeroCaja ?? turno.cajaNumero ?? 0) as unknown as number))
         .filter((value) => Number.isFinite(value) && value > 0),
     ),
   ).sort((a, b) => a - b);
