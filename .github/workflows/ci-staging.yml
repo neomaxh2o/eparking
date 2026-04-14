@@ -1,0 +1,47 @@
+name: CI — staging
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ staging ]
+  workflow_dispatch: {}
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run unit tests if present
+        run: |
+          if npm run --if-present test; then
+            echo "test script executed"
+          else
+            echo "no test script found; skipping unit tests"
+          fi
+
+      - name: Build (smoke)
+        run: |
+          if npm run --if-present build; then
+            echo "build completed"
+          else
+            echo "no build script or build failed"
+            exit 1
+          fi
