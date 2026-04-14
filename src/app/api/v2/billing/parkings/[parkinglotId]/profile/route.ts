@@ -102,23 +102,23 @@ export async function PATCH(
     {
       $set: {
         billingProfile: {
-          enabled: Boolean(body?.enabled ?? false),
-          businessName: String(body?.businessName ?? ''),
-          taxCondition: String(body?.taxCondition ?? 'consumidor_final'),
-          documentType: String(body?.documentType ?? 'cuit'),
-          documentNumber: String(body?.documentNumber ?? ''),
-          pointOfSale: String(body?.pointOfSale ?? ''),
-          voucherTypeDefault: String(body?.voucherTypeDefault ?? 'consumidor_final'),
-          iibb: String(body?.iibb ?? ''),
-          address: String(body?.address ?? ''),
-          city: String(body?.city ?? ''),
-          email: String(body?.email ?? ''),
-          phone: String(body?.phone ?? ''),
+          enabled: Boolean((body as any)?.enabled ?? false),
+          businessName: String((body as any)?.businessName ?? ''),
+          taxCondition: String((body as any)?.taxCondition ?? 'consumidor_final'),
+          documentType: String((body as any)?.documentType ?? 'cuit'),
+          documentNumber: String((body as any)?.documentNumber ?? ''),
+          pointOfSale: String((body as any)?.pointOfSale ?? ''),
+          voucherTypeDefault: String((body as any)?.voucherTypeDefault ?? 'consumidor_final'),
+          iibb: String((body as any)?.iibb ?? ''),
+          address: String((body as any)?.address ?? ''),
+          city: String((body as any)?.city ?? ''),
+          email: String((body as any)?.email ?? ''),
+          phone: String((body as any)?.phone ?? ''),
         },
       },
     },
     { new: true },
-  ).lean();
+  ).lean<Record<string, unknown> | null>();
 
   if (!updated) {
     return NextResponse.json({ error: 'Playa no encontrada' }, { status: 404 });
@@ -126,8 +126,8 @@ export async function PATCH(
 
   return NextResponse.json({
     ok: true,
-    parkinglotId: String((updated as any)._id),
-    parkingName: String((updated as any).name ?? ''),
-    billingProfile: (updated as any).billingProfile ?? {},
+    parkinglotId: String(updated._id),
+    parkingName: String(updated.name ?? ''),
+    billingProfile: updated.billingProfile ?? {},
   }, { status: 200 });
 }
