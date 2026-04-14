@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, movement }, { status: 201 });
-  } catch (e: any) {
-    console.error('[test/charge] error', e);
-    return NextResponse.json({ error: e?.message || 'error' }, { status: 500 });
+  } catch (e: unknown) {
+    console.error('[test/charge] error', e instanceof Error ? e.message : String(e));
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'error' }, { status: 500 });
   }
 }
