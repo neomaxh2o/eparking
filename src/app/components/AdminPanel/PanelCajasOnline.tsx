@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { adaptTurnoFromLegacy } from '@/modules/turnos/adapters/turnoViewModel.adapter';
 
 type CajaOnlineItem = {
   _id: string;
@@ -56,6 +57,73 @@ function formatDate(value?: string) {
   return Number.isNaN(date.getTime()) ? '-' : date.toUTCString();
 }
 
+const USE_TURNO_VIEW_MODEL_V2 = typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_USE_TURNO_VIEW_MODEL_V2 === 'true';
+
+function normalizeTurnoAbiertoLegacy(it: Record<string, unknown>) {
+  if (it.turnoAbierto && typeof it.turnoAbierto === 'object') {
+    return it.turnoAbierto as CajaOnlineItem['turnoAbierto'];
+  }
+
+  if (!it.turnoId) {
+    return null;
+  }
+
+  const turno = (it.turno && typeof it.turno === 'object') ? (it.turno as Record<string, unknown>) : null;
+
+  return {
+    _id: String(it.turnoId),
+    cajaCode: typeof it.code === 'string' ? it.code : '',
+    fechaApertura: typeof turno?.fechaApertura === 'string' ? turno.fechaApertura : undefined,
+    esCajaAdministrativa: Boolean(turno?.esCajaAdministrativa),
+    totalTurno: typeof turno?.totalTurno === 'number' ? turno.totalTurno : 0,
+    operatorId: typeof turno?.operatorId === 'string' ? turno.operatorId : '',
+    operatorName: typeof turno?.operatorName === 'string' ? turno.operatorName : '',
+    operatorEmail: typeof turno?.operatorEmail === 'string' ? turno.operatorEmail : '',
+  };
+}
+
+function normalizeTurnoAbiertoViewModel(it: Record<string, unknown>) {
+  if (it.turnoAbierto && typeof it.turnoAbierto === 'object') {
+    const vm = adaptTurnoFromLegacy(it.turnoAbierto);
+    if (!vm) return it.turnoAbierto as CajaOnlineItem['turnoAbierto'];
+    return {
+      _id: vm.turnoId,
+      cajaCode: vm.caja.cajaCode ?? (typeof it.code === 'string' ? it.code : ''),
+      fechaApertura: vm.openedAt,
+      esCajaAdministrativa: vm.caja.esAdministrativa,
+      totalTurno: vm.totalCobrado,
+      operatorId: vm.operador.operatorId ?? '',
+      operatorName: vm.operador.operatorName ?? '',
+      operatorEmail: vm.operador.operatorEmail ?? '',
+    };
+  }
+
+  if (!it.turnoId) {
+    return null;
+  }
+
+  const vm = adaptTurnoFromLegacy({
+    _id: it.turnoId,
+    cajaCode: it.code,
+    ...(it.turno && typeof it.turno === 'object' ? (it.turno as Record<string, unknown>) : {}),
+  });
+
+  if (!vm) {
+    return normalizeTurnoAbiertoLegacy(it);
+  }
+
+  return {
+    _id: vm.turnoId,
+    cajaCode: vm.caja.cajaCode ?? (typeof it.code === 'string' ? it.code : ''),
+    fechaApertura: vm.openedAt,
+    esCajaAdministrativa: vm.caja.esAdministrativa,
+    totalTurno: vm.totalCobrado,
+    operatorId: vm.operador.operatorId ?? '',
+    operatorName: vm.operador.operatorName ?? '',
+    operatorEmail: vm.operador.operatorEmail ?? '',
+  };
+}
+
 export default function PanelCajasOnline() {
   const [items, setItems] = useState<CajaOnlineItem[]>([]);
   const [parkings, setParkings] = useState<ParkingOption[]>([]);
@@ -89,12 +157,14 @@ export default function PanelCajasOnline() {
       const data = contentType.includes('application/json') ? await res.json() : null;
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar la auditoría online');
       const rawItems = Array.isArray(data?.items) ? data.items : (Array.isArray(data?.cajas) ? data.cajas : []);
-      const normalized = rawItems.map((it:any)=> ({
-        ...it,
-        // normalize turnoAbierto: accept turnoAbierto object OR turnoId OR embedded turno
-        turnoAbierto: it.turnoAbierto || (it.turnoId ? { _id: it.turnoId, fechaApertura: it.turno?.fechaApertura, operatorName: it.turno?.operatorName, totalTurno: it.turno?.totalTurno } : null)
-      }));
-      const unique = Array.from(new Map(normalized.filter(Boolean).map((i:any)=>[i._id,i])).values());
+      const normalized = rawItems.map((item: unknown) => {
+        const it = (item && typeof item === 'object') ? (item as Record<string, unknown>) : {};
+        return {
+          ...it,
+          turnoAbierto: USE_TURNO_VIEW_MODEL_V2 ? normalizeTurnoAbiertoViewModel(it) : normalizeTurnoAbiertoLegacy(it),
+        } as CajaOnlineItem;
+      });
+      const unique = Array.from(new Map(normalized.filter(Boolean).map((item) => [item._id, item])).values());
       setItems(unique);
     } catch (err: any) {
       setError(err.message || 'Error cargando cajas online');
