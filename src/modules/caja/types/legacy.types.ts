@@ -51,6 +51,8 @@ export interface LegacyLiquidacionRecord extends LegacyRecord {
 export interface LegacyTurnoRecord extends LegacyRecord {
   _id?: unknown;
   operatorId?: unknown;
+  parkinglotId?: unknown;
+  assignedParking?: unknown;
   fechaApertura?: unknown;
   fechaCierre?: unknown;
   tickets?: unknown;

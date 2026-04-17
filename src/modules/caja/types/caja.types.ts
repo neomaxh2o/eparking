@@ -83,6 +83,8 @@ export interface LiquidacionTurno {
 export interface TurnoCaja {
   _id: string;
   operatorId: string;
+  parkinglotId?: string;
+  assignedParking?: string;
   fechaApertura: string;
   fechaCierre?: string;
   tickets: TicketCaja[];

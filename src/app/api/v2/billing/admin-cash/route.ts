@@ -26,7 +26,12 @@ export async function GET(req: NextRequest) {
     esCajaAdministrativa: true,
   };
 
-  if (parkinglotId) query.assignedParking = parkinglotId;
+  if (parkinglotId) {
+    query.$or = [
+      { parkinglotId },
+      { assignedParking: parkinglotId },
+    ];
+  }
 
   const turno = await Turno.findOne(query).sort({ createdAt: -1 }).lean<Record<string, unknown> | null>();
   return NextResponse.json({ turno: turno ?? null }, { status: 200 });
@@ -46,7 +51,7 @@ export async function POST(req: NextRequest) {
   const body: unknown = await req.json().catch(() => null);
   const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
   const parkinglotId = b?.parkinglotId ? String(b.parkinglotId) : null;
-  const cajaNumero = Number(b?.cajaNumero ?? 0);
+  const cajaNumero = Number(b?.cajaNumero ?? 1);
 
   if (!parkinglotId) {
     return NextResponse.json({ error: 'parkinglotId es requerido' }, { status: 400 });
@@ -82,11 +87,16 @@ export async function POST(req: NextRequest) {
   }).lean<Record<string, unknown> | null>();
 
   if (existing) {
+    const existingParkingId = String((existing.parkinglotId ?? existing.assignedParking ?? '') || '');
+    if (existingParkingId === parkinglotId) {
+      return NextResponse.json({ ok: true, turno: existing }, { status: 200 });
+    }
     return NextResponse.json({ error: 'Ya existe una caja administrativa abierta para este usuario.', turno: existing }, { status: 409 });
   }
 
   const turno = await Turno.create({
     operatorId: session.user.id,
+    parkinglotId,
     assignedParking: parkinglotId,
     numeroCaja: cajaNumero,
     cajaNumero,

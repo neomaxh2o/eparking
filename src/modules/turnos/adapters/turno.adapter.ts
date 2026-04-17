@@ -42,6 +42,8 @@ export function adaptTurnoFromLegacy(input: unknown): TurnoCaja {
     operatorId: String(raw.operatorId ?? ''),
     codigoTurno: asString(raw.codigoTurno) ?? asString(raw.codigo) ?? '',
     numeroTurno: asNumber(raw.numeroTurno) ?? asNumber(raw.numero) ?? asNumber(raw.subturnoNumero) ?? 0,
+    parkinglotId: asString(raw.parkinglotId) ?? asString(raw.assignedParking),
+    assignedParking: asString(raw.assignedParking) ?? asString(raw.parkinglotId),
     fechaApertura: toIsoString(raw.fechaApertura) ?? new Date().toISOString(),
     fechaCierre: toIsoString(raw.fechaCierre),
     tickets: Array.isArray(raw.tickets) ? raw.tickets.map(adaptTicketFromLegacy) : [],

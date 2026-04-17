@@ -65,6 +65,8 @@ export type EstadoTurno =
 export interface ITurno extends Document {
   operatorId: string;
   operatorName?: string;
+  parkinglotId?: string;
+  assignedParking?: string;
   fechaApertura: Date;
   fechaCierre?: Date;
   tickets: ITicket[];
@@ -164,6 +166,8 @@ const turnoSchema = new Schema<ITurno>(
   {
     operatorId: { type: String, required: true, index: true },
     operatorName: { type: String, trim: true },
+    parkinglotId: { type: String, default: null, index: true },
+    assignedParking: { type: String, default: null, index: true },
 
     fechaApertura: { type: Date, default: Date.now },
     fechaCierre: { type: Date },
