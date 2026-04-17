@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParkings as useParkingsModule } from '@/modules/parking/hooks/useParkings';
+import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 
 const TAX_CONDITIONS = [
   { value: 'responsable_inscripto', label: 'Responsable inscripto' },
@@ -45,6 +46,8 @@ export default function ParkingBillingProfilePanel({
   ownerId?: string;
 }) {
   const { parkings, loading } = useParkingsModule();
+  const ownerOperations = useOwnerOperations();
+  const inlineStatusEnabled = !ownerOperations;
   const [selectedParkingId, setSelectedParkingId] = useState('');
   const [form, setForm] = useState(EMPTY_PROFILE);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -52,16 +55,26 @@ export default function ParkingBillingProfilePanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!ownerOperations) return;
+    if (message) ownerOperations.setStatusMessage?.({ type: 'success', text: message });
+    if (error) ownerOperations.setStatusMessage?.({ type: 'error', text: error });
+  }, [message, error, ownerOperations]);
+
   const availableParkings = useMemo(() => {
     if (!ownerId) return parkings;
     return parkings.filter((parking) => String(parking.owner ?? '') === String(ownerId));
   }, [parkings, ownerId]);
 
   useEffect(() => {
+    if (ownerOperations?.selectedParkingId) {
+      setSelectedParkingId(String(ownerOperations.selectedParkingId));
+      return;
+    }
     if (!selectedParkingId && availableParkings.length > 0) {
       setSelectedParkingId(String(availableParkings[0]._id ?? availableParkings[0].id ?? ''));
     }
-  }, [availableParkings, selectedParkingId]);
+  }, [availableParkings, selectedParkingId, ownerOperations?.selectedParkingId]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -168,8 +181,8 @@ export default function ParkingBillingProfilePanel({
         </label>
       </div>
 
-      {message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      {inlineStatusEnabled && message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div> : null}
+      {inlineStatusEnabled && error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
       {form.enabled ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Campos obligatorios con perfil habilitado: razón social, número fiscal y punto de venta. Si el tipo es CUIT, debe tener 11 dígitos.
