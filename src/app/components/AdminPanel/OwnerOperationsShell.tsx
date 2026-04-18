@@ -366,8 +366,14 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
   };
 
   const isPreOperativeEntry = operationalState === 'pre-operativo';
+  const isActiveEntry = operationalState === 'operativo';
   const isClosedEntry = operationalState === 'post-cierre';
   const preOperativePrimary = sections.find((item) => item.key === 'facturacion');
+  const closedSections = {
+    preparacion: sectionsByGroup.preparacion.filter((item) => item.key === 'users'),
+    operacion: [] as SectionConfig[],
+    control: sectionsByGroup.control,
+  };
 
   const closeTurno = async () => {
     if (!operationalSnapshot?.activeTurnoId) return;
@@ -406,7 +412,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       ) : null}
 
       <div className="dashboard-section overflow-hidden p-4 md:p-5 space-y-4">
-        {!isPreOperativeEntry && !isClosedEntry ? (
+        {isActiveEntry ? (
           <>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
               <div>
@@ -425,6 +431,24 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
 
             <div className={`rounded-2xl border px-4 py-3 text-sm ${STATE_META[operationalState].badge}`}>
               {STATE_META[operationalState].summary}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              <SectionCard section="preparacion" state={operationalState} items={sectionsByGroup.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
+              <SectionCard section="operacion" state={operationalState} items={sectionsByGroup.operacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
+              <SectionCard section="control" state={operationalState} items={sectionsByGroup.control} activeTab={safeActiveTab} onSelect={setActiveTab} />
+            </div>
+          </>
+        ) : null}
+
+        {isClosedEntry ? (
+          <>
+            <div className={`rounded-2xl border px-4 py-3 text-sm ${STATE_META[operationalState].badge}`}>
+              {STATE_META[operationalState].summary}
+            </div>
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              {closedSections.preparacion.length ? <SectionCard section="preparacion" state={operationalState} items={closedSections.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} /> : null}
+              {closedSections.control.length ? <SectionCard section="control" state={operationalState} items={closedSections.control} activeTab={safeActiveTab} onSelect={setActiveTab} /> : null}
             </div>
           </>
         ) : null}
@@ -451,13 +475,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
               </button>
             ) : null}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <SectionCard section="preparacion" state={operationalState} items={sectionsByGroup.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
-            <SectionCard section="operacion" state={operationalState} items={sectionsByGroup.operacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
-            <SectionCard section="control" state={operationalState} items={sectionsByGroup.control} activeTab={safeActiveTab} onSelect={setActiveTab} />
-          </div>
-        )}
+        ) : null}
       </div>
 
       {statusMessage ? (
