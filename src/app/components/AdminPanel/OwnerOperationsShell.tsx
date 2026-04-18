@@ -80,59 +80,10 @@ const STATE_META: Record<OperationalState, { label: string; summary: string; bad
   },
 };
 
-function OperationalHeader({ selectedParkingId }: { selectedParkingId: string }) {
+function OperationalHeader({ loading, error, onRefresh, onCloseTurno }: { loading: boolean; error: string | null; onRefresh: () => void; onCloseTurno: () => Promise<void> | void; }) {
   const ctx = useOwnerOperations();
-  const [turno, setTurno] = useState<AdminCashTurno | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const url = selectedParkingId ? `/api/v2/billing/admin-cash?parkinglotId=${encodeURIComponent(selectedParkingId)}` : '/api/v2/billing/admin-cash';
-      const res = await fetch(url, { cache: 'no-store' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'No se pudo obtener el estado operativo');
-      const currentTurno = (data?.turno ?? null) as AdminCashTurno | null;
-      setTurno(currentTurno);
-      ctx?.setOperationalState?.(currentTurno?._id || currentTurno?.id ? 'operativo' : 'pre-operativo');
-    } catch (err: any) {
-      setError(err.message || 'Error desconocido');
-      setTurno(null);
-      ctx?.setOperationalState?.('pre-operativo');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { void refresh(); }, [selectedParkingId, ctx?.refreshToken]);
-
-  const closeTurno = async () => {
-    if (!(turno?._id || turno?.id)) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch('/api/v2/billing/admin-cash', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ turnoId: turno._id || turno.id, action: 'close' }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja administrativa');
-      setTurno(null);
-      ctx?.setOperationalState?.('post-cierre');
-      ctx?.bumpRefreshToken?.();
-      ctx?.setStatusMessage?.({ type: 'success', text: 'Caja/turno administrativo cerrado. El shell quedó en modo control.' });
-    } catch (err: any) {
-      setError(err.message || 'Error desconocido');
-      ctx?.setStatusMessage?.({ type: 'error', text: err.message || 'No se pudo cerrar la caja administrativa.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const state = ctx?.operationalState || 'pre-operativo';
+  const snapshot = ctx?.operationalSnapshot;
+  const state = snapshot?.operationalState || 'pre-operativo';
   const stateMeta = STATE_META[state];
 
   return (
@@ -153,28 +104,26 @@ function OperationalHeader({ selectedParkingId }: { selectedParkingId: string })
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_1fr]">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Info label="Playa activa" value={selectedParkingId || 'Todas / sin selección'} />
-          <Info label="Caja activa" value={turno ? String(turno.numeroCaja ?? turno.cajaNumero ?? '-') : 'Sin caja abierta'} />
-          <Info label="Turno activo" value={turno ? String(turno._id ?? turno.id ?? '-') : 'Sin turno abierto'} />
-          <Info label="Estado runtime" value={turno ? String(turno.estado ?? 'abierto') : stateMeta.label} />
-          <Info label="Responsable" value={turno?.operatorName || turno?.operatorId || 'Owner actual'} />
-          <Info label="Siguiente foco" value={stateMeta.primaryAction} />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Info label="Playa" value={snapshot?.activeParkingId || 'Sin playa activa'} />
+          <Info label="Caja" value={snapshot?.activeCajaNumero || 'Sin caja activa'} />
+          <Info label="Turno" value={snapshot?.activeTurnoId || 'Sin turno activo'} />
+          <Info label="Estado" value={stateMeta.label} />
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Acciones primarias</p>
           <div className="flex flex-wrap gap-3">
-            <button onClick={() => ctx?.bumpRefreshToken?.()} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50" disabled={loading}>
+            <button onClick={onRefresh} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50" disabled={loading}>
               {loading ? 'Verificando...' : 'Verificar estado'}
             </button>
             {state === 'operativo' ? (
-              <button onClick={() => void closeTurno()} className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100" disabled={loading}>
+              <button onClick={() => void onCloseTurno()} className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100" disabled={loading}>
                 Cerrar caja/turno actual
               </button>
             ) : (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
-                Abrí caja/turno desde Preparación para habilitar la jornada real.
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                Estado no transaccional / consulta.
               </div>
             )}
           </div>
@@ -261,18 +210,59 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
   const selectedParkingId = ctx?.selectedParkingId || '';
   const setSelectedParkingId = ctx?.setSelectedParkingId || (() => {});
   const bumpRefreshToken = ctx?.bumpRefreshToken || (() => {});
+  const operationalSnapshot = ctx?.operationalSnapshot;
+  const setOperationalSnapshot = ctx?.setOperationalSnapshot || (() => {});
   const operationalState = ctx?.operationalState || 'pre-operativo';
   const statusMessage = ctx?.statusMessage ?? null;
+  const [operationalLoading, setOperationalLoading] = useState(false);
+  const [operationalError, setOperationalError] = useState<string | null>(null);
 
   const ownerParkings = useMemo(
     () => parkings.filter((parking) => String(parking.owner || '') === String(ownerId)),
     [parkings, ownerId]
   );
 
+  const refreshOperationalSnapshot = async () => {
+    try {
+      setOperationalLoading(true);
+      setOperationalError(null);
+      const url = selectedParkingId ? `/api/v2/billing/admin-cash?parkinglotId=${encodeURIComponent(selectedParkingId)}` : '/api/v2/billing/admin-cash';
+      const res = await fetch(url, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo obtener el estado operativo');
+      const turno = (data?.turno ?? null) as AdminCashTurno | null;
+      const nextState: OperationalState = turno?._id || turno?.id ? 'operativo' : ((operationalSnapshot?.operationalState === 'post-cierre') ? 'post-cierre' : 'pre-operativo');
+      setOperationalSnapshot({
+        activeParkingId: String(turno?.parkinglotId ?? turno?.assignedParking ?? selectedParkingId ?? ''),
+        activeCajaNumero: turno ? String(turno.numeroCaja ?? turno.cajaNumero ?? '') : '',
+        activeTurnoId: turno ? String(turno._id ?? turno.id ?? '') : '',
+        turnoEstado: turno ? String(turno.estado ?? '') : '',
+        operationalState: nextState,
+        resolved: true,
+      });
+    } catch (err: any) {
+      setOperationalError(err.message || 'Error desconocido');
+      setOperationalSnapshot({
+        activeParkingId: selectedParkingId,
+        activeCajaNumero: '',
+        activeTurnoId: '',
+        turnoEstado: '',
+        operationalState: operationalSnapshot?.operationalState === 'post-cierre' ? 'post-cierre' : 'pre-operativo',
+        resolved: true,
+      });
+    } finally {
+      setOperationalLoading(false);
+    }
+  };
+
   const selectedParkingName = useMemo(
     () => ownerParkings.find((parking) => String(parking._id) === String(selectedParkingId))?.name ?? '',
     [ownerParkings, selectedParkingId]
   );
+
+  useEffect(() => {
+    void refreshOperationalSnapshot();
+  }, [selectedParkingId, ctx?.refreshToken]);
 
   const sections = useMemo<SectionConfig[]>(() => [
     {
@@ -346,7 +336,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
           parkingName={selectedParkingName}
           parkingOptions={ownerParkings.map((parking) => ({ _id: parking._id, name: parking.name }))}
           onParkingChange={(value) => { setSelectedParkingId(value); bumpRefreshToken(); }}
-          parkingSelectorDisabled={loading}
+          parkingSelectorDisabled={loading || operationalLoading}
           onOpened={() => {
             bumpRefreshToken();
             setActiveTab('reservations');
@@ -376,14 +366,47 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
   };
 
   const isPreOperativeEntry = operationalState === 'pre-operativo';
+  const isClosedEntry = operationalState === 'post-cierre';
   const preOperativePrimary = sections.find((item) => item.key === 'facturacion');
+
+  const closeTurno = async () => {
+    if (!operationalSnapshot?.activeTurnoId) return;
+    try {
+      setOperationalLoading(true);
+      setOperationalError(null);
+      const res = await fetch('/api/v2/billing/admin-cash', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turnoId: operationalSnapshot.activeTurnoId, action: 'close' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja administrativa');
+      setOperationalSnapshot({
+        activeParkingId: selectedParkingId,
+        activeCajaNumero: '',
+        activeTurnoId: '',
+        turnoEstado: '',
+        operationalState: 'post-cierre',
+        resolved: true,
+      });
+      ctx?.setStatusMessage?.({ type: 'success', text: 'Caja/turno administrativo cerrado. El shell quedó en modo consulta.' });
+      ctx?.bumpRefreshToken?.();
+    } catch (err: any) {
+      setOperationalError(err.message || 'Error desconocido');
+      ctx?.setStatusMessage?.({ type: 'error', text: err.message || 'No se pudo cerrar la caja administrativa.' });
+    } finally {
+      setOperationalLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
-      {!isPreOperativeEntry ? <OperationalHeader selectedParkingId={selectedParkingId} /> : null}
+      {operationalSnapshot?.resolved ? (
+        <OperationalHeader loading={operationalLoading} error={operationalError} onRefresh={() => void refreshOperationalSnapshot()} onCloseTurno={closeTurno} />
+      ) : null}
 
       <div className="dashboard-section overflow-hidden p-4 md:p-5 space-y-4">
-        {!isPreOperativeEntry ? (
+        {!isPreOperativeEntry && !isClosedEntry ? (
           <>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
               <div>
