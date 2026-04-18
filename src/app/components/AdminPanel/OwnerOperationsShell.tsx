@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import PanelAbonados from '@/app/components/AdminPanel/PanelAbonados';
 import PanelFacturacion from '@/app/components/AdminPanel/PanelFacturacion';
-import PanelCajasOnline from '@/app/components/AdminPanel/PanelCajasOnline';
 import PanelHistoricoCajas from '@/app/components/AdminPanel/PanelHistoricoCajas';
 import ParkingBillingProfilePanel from '@/app/components/AdminPanel/AdminParking/ParkingBillingProfilePanel';
 import OwnerOperationsSummary from '@/app/components/AdminPanel/OwnerOperationsSummary';
@@ -21,56 +20,45 @@ type AdminCashTurno = {
   numeroCaja?: number | null;
   cajaNumero?: number | null;
   estado?: string;
-  operatorId?: string;
-  operatorName?: string;
 };
 
 type OperationalState = 'pre-operativo' | 'operativo';
-type ShellSection = 'preparacion' | 'operacion' | 'control';
 
-type SectionConfig = {
-  key: TabKey;
-  label: string;
-  section: ShellSection;
-  description: string;
-  states: OperationalState[];
-  emphasis?: 'primary' | 'secondary';
-  content: React.ReactNode;
+type DocumentsSummary = {
+  total: number;
+  paid: number;
+  pending: number;
+  overdue: number;
 };
 
-const SECTION_META: Record<ShellSection, { label: string; description: string }> = {
-  preparacion: {
-    label: 'Preparación',
-    description: 'Abrir jornada, revisar base operativa y dejar la playa lista.',
-  },
-  operacion: {
-    label: 'Operación',
-    description: 'Ejecutar la jornada activa con foco en transacciones y seguimiento.',
-  },
-  control: {
-    label: 'Control',
-    description: 'Validar, auditar y preparar el siguiente ciclo operativo.',
-  },
-};
-
-const STATE_META: Record<OperationalState, { label: string; summary: string; badge: string; recommendedTab: TabKey; primaryAction: string; secondaryAction: string }> = {
+const STATE_META: Record<OperationalState, { label: string; summary: string; badge: string; primaryAction: string; secondaryAction: string }> = {
   'pre-operativo': {
     label: 'Pre-operativo',
-    summary: 'La jornada todavía no empezó. Primero definí playa y abrí caja/turno.',
+    summary: 'La jornada todavía no empezó. Primero definí playa e iniciá el turno.',
     badge: 'border-amber-200 bg-amber-50 text-amber-800',
-    recommendedTab: 'facturacion',
-    primaryAction: 'Abrir operación',
+    primaryAction: 'Iniciar turno',
     secondaryAction: 'Revisar preparación',
   },
   operativo: {
     label: 'Operativo',
-    summary: 'La jornada está activa. Priorizá facturación, cobranzas y monitoreo de cajas.',
+    summary: 'La jornada está activa. Priorizá cobranzas y facturación operativa.',
     badge: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    recommendedTab: 'reservations',
-    primaryAction: 'Gestionar operación',
-    secondaryAction: 'Monitorear cajas',
+    primaryAction: 'Operar jornada',
+    secondaryAction: 'Monitorear soporte e histórico',
   },
 };
+
+function SectionBlock({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-gray-200 bg-white p-5 md:p-6 space-y-5">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{title}</p>
+        <p className="mt-2 text-sm text-gray-600">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 function OperationalHeader({ loading, error, onRefresh, onCloseTurno }: { loading: boolean; error: string | null; onRefresh: () => void; onCloseTurno: () => Promise<void> | void; }) {
   const ctx = useOwnerOperations();
@@ -97,9 +85,9 @@ function OperationalHeader({ loading, error, onRefresh, onCloseTurno }: { loadin
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_1fr]">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Info label="Playa" value={snapshot?.activeParkingId || 'Sin playa activa'} />
-          <Info label="Caja" value={snapshot?.activeCajaNumero || 'Sin caja activa'} />
-          <Info label="Turno" value={snapshot?.activeTurnoId || 'Sin turno activo'} />
+          <Info label="Playa activa" value={snapshot?.activeParkingId || 'Sin playa activa'} />
+          <Info label="Caja activa" value={snapshot?.activeCajaNumero || 'Sin caja activa'} />
+          <Info label="Turno activo" value={snapshot?.activeTurnoId || 'Sin turno activo'} />
           <Info label="Estado" value={stateMeta.label} />
         </div>
 
@@ -135,68 +123,64 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SectionCard({
-  section,
-  state,
-  items,
-  activeTab,
-  onSelect,
-}: {
-  section: ShellSection;
-  state: OperationalState;
-  items: SectionConfig[];
-  activeTab: TabKey;
-  onSelect: (key: TabKey) => void;
-}) {
-  const meta = SECTION_META[section];
-  const stateMeta = STATE_META[state];
+function DocumentsModule({ selectedParkingId }: { selectedParkingId: string }) {
+  const ctx = useOwnerOperations();
+  const [summary, setSummary] = useState<DocumentsSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const operationalState = ctx?.operationalState || 'pre-operativo';
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const params = new URLSearchParams();
+        if (selectedParkingId) params.set('parkinglotId', selectedParkingId);
+        const res = await fetch(`/api/v2/billing/documents${params.toString() ? `?${params.toString()}` : ''}`);
+        const data = await res.json().catch(() => ([]));
+        const docs = Array.isArray(data) ? data : [];
+        const total = docs.length;
+        const paid = docs.filter((d: any) => d.estado === 'pagada').length;
+        const pending = docs.filter((d: any) => d.estado === 'emitida' || d.estado === 'pendiente').length;
+        const overdue = docs.filter((d: any) => d.estado === 'vencida').length;
+        setSummary({ total, paid, pending, overdue });
+      } catch (err: any) {
+        setError(err.message || 'No se pudo cargar el resumen de documentos.');
+        setSummary(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void run();
+  }, [selectedParkingId, ctx?.refreshToken]);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">{meta.label}</p>
-        <p className="mt-1 text-sm text-gray-600">{meta.description}</p>
+    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">Documentos</h3>
+          <p className="mt-1 text-sm text-gray-600">Resumen separado de facturación, sin duplicar el flujo operativo.</p>
+        </div>
+        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${operationalState === 'operativo' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-700'}`}>
+          {operationalState === 'operativo' ? 'Operativo' : 'Consulta'}
+        </span>
       </div>
-
-      <div className="space-y-2">
-        {items.map((item) => {
-          const enabled = item.states.includes(state);
-          const isActive = activeTab === item.key;
-          const isRecommended = stateMeta.recommendedTab === item.key;
-
-          return (
-            <button
-              key={item.key}
-              onClick={() => enabled && onSelect(item.key)}
-              disabled={!enabled}
-              className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                isActive
-                  ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
-                  : enabled
-                    ? isRecommended
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
-                      : item.emphasis === 'primary'
-                        ? 'border-gray-300 bg-white text-gray-900 hover:bg-gray-50'
-                        : 'border-gray-200 bg-gray-50 text-gray-800 hover:bg-gray-100'
-                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold">{item.label}</p>
-                  <p className={`mt-1 text-xs ${isActive ? 'text-gray-200' : enabled ? 'text-gray-500' : 'text-gray-400'}`}>{item.description}</p>
-                </div>
-                {isRecommended && enabled ? <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${isActive ? 'bg-white/15 text-white' : 'bg-white text-emerald-700 border border-emerald-200'}`}>Prioridad</span> : null}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {loading ? <p className="text-sm text-gray-500">Cargando documentos…</p> : null}
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {summary ? (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <Info label="Total" value={String(summary.total)} />
+          <Info label="Pagados" value={String(summary.paid)} />
+          <Info label="Pendientes" value={String(summary.pending)} />
+          <Info label="Vencidos" value={String(summary.overdue)} />
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { ownerId: string; activeTab: TabKey; setActiveTab: (key: TabKey) => void }) {
+function InnerOwnerOperationsShell({ ownerId }: { ownerId: string }) {
   const { parkings, loading } = useParkingLots();
   const ctx = useOwnerOperations();
   const selectedParkingId = ctx?.selectedParkingId || '';
@@ -256,109 +240,6 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
     void refreshOperationalSnapshot();
   }, [selectedParkingId, ctx?.refreshToken]);
 
-  const sections = useMemo<SectionConfig[]>(() => [
-    {
-      key: 'facturacion',
-      label: 'Facturación operativa',
-      section: 'operacion',
-      description: 'Facturación operativa habilitada solo con turno/caja activa.',
-      states: ['operativo'],
-      emphasis: 'primary',
-      content: <PanelFacturacion />,
-    },
-    {
-      key: 'users',
-      label: 'Estado actual',
-      section: 'preparacion',
-      description: 'Resumen ejecutivo del owner y de la playa filtrada.',
-      states: ['pre-operativo', 'operativo'],
-      content: <OwnerOperationsSummary selectedParkingId={selectedParkingId} />,
-    },
-    {
-      key: 'abonados',
-      label: 'Herramientas comerciales',
-      section: 'preparacion',
-      description: 'Abonados, altas y preparación comercial sin depender del cierre.',
-      states: ['pre-operativo', 'operativo'],
-      content: <PanelAbonados />,
-    },
-    {
-      key: 'reservations',
-      label: 'Cobranzas',
-      section: 'operacion',
-      description: 'Cobros y seguimiento operativo en jornada activa.',
-      states: ['operativo'],
-      emphasis: 'primary',
-      content: <OwnerCollectionsPanel selectedParkingId={selectedParkingId} />,
-    },
-    {
-      key: 'historico-cajas',
-      label: 'Cajas e histórico',
-      section: 'control',
-      description: 'Monitoreo de cajas online e histórico de cierres.',
-      states: ['pre-operativo', 'operativo'],
-      emphasis: 'primary',
-      content: <div className="space-y-6"><PanelCajasOnline /><PanelHistoricoCajas /></div>,
-    },
-    {
-      key: 'tarifas',
-      label: 'Fiscal y control',
-      section: 'control',
-      description: 'Configuración fiscal, validaciones y soporte al cierre.',
-      states: ['pre-operativo', 'operativo'],
-      content: <ParkingBillingProfilePanel ownerId={ownerId} />,
-    },
-  ], [ownerId, operationalState, selectedParkingId]);
-
-  const accessibleTabs = new Set<TabKey>(sections.filter((item) => item.states.includes(operationalState)).map((item) => item.key));
-  const recommendedTab = STATE_META[operationalState].recommendedTab;
-  const safeActiveTab = accessibleTabs.has(activeTab) ? activeTab : recommendedTab;
-
-  useEffect(() => {
-    if (activeTab !== safeActiveTab) {
-      setActiveTab(safeActiveTab);
-    }
-  }, [activeTab, safeActiveTab, setActiveTab]);
-
-  const workArea = (() => {
-    if (operationalState === 'pre-operativo' && safeActiveTab === 'facturacion') {
-      return (
-        <PreOperativeView
-          selectedParkingId={selectedParkingId}
-          parkingName={selectedParkingName}
-          parkingOptions={ownerParkings.map((parking) => ({ _id: parking._id, name: parking.name }))}
-          onParkingChange={(value) => { setSelectedParkingId(value); bumpRefreshToken(); }}
-          parkingSelectorDisabled={loading || operationalLoading}
-          onOpened={() => {
-            bumpRefreshToken();
-            setActiveTab('reservations');
-          }}
-        />
-      );
-    }
-
-    if (operationalState !== 'operativo' && safeActiveTab === 'reservations') {
-      return (
-        <BlockedState
-          title={'Operación todavía no iniciada'}
-          description={'Las cobranzas se habilitan cuando iniciás turno para la playa activa.'}
-        />
-      );
-    }
-
-    return sections.find((item) => item.key === safeActiveTab)?.content;
-  })();
-
-  const sectionsByGroup = {
-    preparacion: sections.filter((item) => item.section === 'preparacion'),
-    operacion: sections.filter((item) => item.section === 'operacion'),
-    control: sections.filter((item) => item.section === 'control'),
-  };
-
-  const isPreOperativeEntry = operationalState === 'pre-operativo';
-  const isActiveEntry = operationalState === 'operativo';
-  const preOperativePrimary = sections.find((item) => item.key === 'facturacion');
-
   const closeTurno = async () => {
     if (!operationalSnapshot?.activeTurnoId) return;
     try {
@@ -370,7 +251,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
         body: JSON.stringify({ turnoId: operationalSnapshot.activeTurnoId, action: 'close' }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar la caja administrativa');
+      if (!res.ok) throw new Error(data.error || 'No se pudo cerrar el turno');
       setOperationalSnapshot({
         activeParkingId: selectedParkingId,
         activeCajaNumero: '',
@@ -383,73 +264,17 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       ctx?.bumpRefreshToken?.();
     } catch (err: any) {
       setOperationalError(err.message || 'Error desconocido');
-      ctx?.setStatusMessage?.({ type: 'error', text: err.message || 'No se pudo cerrar la caja administrativa.' });
+      ctx?.setStatusMessage?.({ type: 'error', text: err.message || 'No se pudo cerrar el turno.' });
     } finally {
       setOperationalLoading(false);
     }
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {operationalSnapshot?.resolved ? (
         <OperationalHeader loading={operationalLoading} error={operationalError} onRefresh={() => void refreshOperationalSnapshot()} onCloseTurno={closeTurno} />
       ) : null}
-
-      <div className="dashboard-section overflow-hidden p-4 md:p-5 space-y-4">
-        {isActiveEntry ? (
-          <>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-700">Playa</label>
-                <select value={selectedParkingId} onChange={(e) => { setSelectedParkingId(e.target.value); bumpRefreshToken(); }} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loading}>
-                  <option value="">Todas las playas del owner</option>
-                  {ownerParkings.map((parking) => (
-                    <option key={parking._id} value={parking._id}>{parking.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                {selectedParkingId ? 'Filtro global aplicado por playa.' : 'Sin filtro global: mostrando alcance total del owner.'}
-              </div>
-            </div>
-
-            <div className={`rounded-2xl border px-4 py-3 text-sm ${STATE_META[operationalState].badge}`}>
-              {STATE_META[operationalState].summary}
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-              <SectionCard section="preparacion" state={operationalState} items={sectionsByGroup.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
-              <SectionCard section="operacion" state={operationalState} items={sectionsByGroup.operacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
-              <SectionCard section="control" state={operationalState} items={sectionsByGroup.control} activeTab={safeActiveTab} onSelect={setActiveTab} />
-            </div>
-          </>
-        ) : null}
-
-
-        {isPreOperativeEntry ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <div className="mb-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Entry point pre-operativo</p>
-              <p className="mt-1 text-sm text-amber-900">Sin turno/caja activa, el único menú operativo disponible es iniciar turno.</p>
-            </div>
-            {preOperativePrimary ? (
-              <button
-                type="button"
-                onClick={() => setActiveTab(preOperativePrimary.key)}
-                className="w-full rounded-2xl border border-emerald-300 bg-white px-4 py-4 text-left transition hover:bg-emerald-50"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-gray-900">{preOperativePrimary.label}</p>
-                    <p className="mt-1 text-xs text-gray-600">{preOperativePrimary.description}</p>
-                  </div>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">Único menú</span>
-                </div>
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
 
       {statusMessage ? (
         <div className={`rounded-2xl border p-4 text-sm ${statusMessage.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : statusMessage.type === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-blue-200 bg-blue-50 text-blue-800'}`}>
@@ -457,26 +282,55 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
         </div>
       ) : null}
 
-      <div className="dashboard-section p-4 md:p-6">
-        {workArea}
-      </div>
+      {operationalState === 'pre-operativo' ? (
+        <SectionBlock title="Operación" description="Antes de usar herramientas operativas, iniciá el turno de la jornada.">
+          <PreOperativeView
+            selectedParkingId={selectedParkingId}
+            parkingName={selectedParkingName}
+            parkingOptions={ownerParkings.map((parking) => ({ _id: parking._id, name: parking.name }))}
+            onParkingChange={(value) => { setSelectedParkingId(value); bumpRefreshToken(); }}
+            parkingSelectorDisabled={loading || operationalLoading}
+            onOpened={() => {
+              bumpRefreshToken();
+            }}
+          />
+        </SectionBlock>
+      ) : null}
+
+      {operationalState === 'operativo' ? (
+        <>
+          <SectionBlock title="Operación" description="Herramientas críticas de la jornada. Primero cobranzas y facturación operativa.">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+              <OwnerCollectionsPanel selectedParkingId={selectedParkingId} />
+              <PanelFacturacion />
+            </div>
+          </SectionBlock>
+
+          <SectionBlock title="Soporte" description="Módulos importantes, pero no críticos en tiempo real. Sin duplicaciones ni accesos paralelos.">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+              <PanelAbonados />
+              <DocumentsModule selectedParkingId={selectedParkingId} />
+              <ParkingBillingProfilePanel ownerId={ownerId} />
+            </div>
+          </SectionBlock>
+
+          <SectionBlock title="Control" description="KPIs y resumen ejecutivo para leer el estado operativo sin distraer la ejecución principal.">
+            <OwnerOperationsSummary selectedParkingId={selectedParkingId} />
+          </SectionBlock>
+
+          <SectionBlock title="Histórico" description="Cierres, auditoría e histórico como último nivel de navegación operativa.">
+            <PanelHistoricoCajas />
+          </SectionBlock>
+        </>
+      ) : null}
     </div>
   );
 }
 
-function BlockedState({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-700">
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-      <p className="mt-2">{description}</p>
-    </div>
-  );
-}
-
-export default function OwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { ownerId: string; activeTab: TabKey; setActiveTab: (key: TabKey) => void }) {
+export default function OwnerOperationsShell({ ownerId }: { ownerId: string; activeTab?: TabKey; setActiveTab?: (key: TabKey) => void }) {
   return (
     <OwnerOperationsProvider>
-      <InnerOwnerOperationsShell ownerId={ownerId} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <InnerOwnerOperationsShell ownerId={ownerId} />
     </OwnerOperationsProvider>
   );
 }
