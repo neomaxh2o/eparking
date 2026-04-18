@@ -17,8 +17,6 @@ import {
   logger as sharedLogger,
 } from '@/modules/turnos/shared/index';
 
-import { createCajaAdministrativa, getCajaActual, closeCaja } from '@/services/cajaService';
-import { saveCajaState, loadCajaState, clearCajaState } from '@/store/caja/actions';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -75,8 +73,6 @@ export default function PanelFacturacion() {
   const [selectedParkingBillingProfile, setSelectedParkingBillingProfile] = useState<any | null>(null);
   const [loadingParkingBillingProfile, setLoadingParkingBillingProfile] = useState(false);
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
-  const [adminCashTurno, setAdminCashTurno] = useState<any | null>(null);
-  const [loadingAdminCash, setLoadingAdminCash] = useState(false);
 
   if (!isOperationalActive) {
     return (
@@ -116,89 +112,6 @@ export default function PanelFacturacion() {
       setParkings([]);
     } finally {
       setLoadingParkings(false);
-    }
-  };
-
-  const fetchAdminCashTurno = async (nextParkinglotId?: string) => {
-    try {
-      setLoadingAdminCash(true);
-      const turno = await getCajaActual(nextParkinglotId);
-      setAdminCashTurno(turno);
-      if (turno && turno._id) {
-        saveCajaState({ turnoId: String(turno._id), parkinglotId: String(nextParkinglotId || ''), cajaNumero: Number(turno.numeroCaja ?? turno.cajaNumero ?? null), openedAt: new Date().toISOString() });
-      } else {
-        clearCajaState();
-      }
-    } catch (e) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('fetchAdminCashTurno:error', e);
-      setAdminCashTurno(null);
-      clearCajaState();
-    } finally {
-      setLoadingAdminCash(false);
-    }
-  };
-
-  const abrirCajaAdministrativa = async () => {
-    if (!parkinglotId) {
-      setError('Selecciona una playa para abrir caja administrativa.');
-      return;
-    }
-    // fallback: try to read caja select from DOM if state empty
-    let effectiveCaja = cajaNumero;
-    if (!effectiveCaja) {
-      const domCaja = (document.getElementById('admin-caja-select') as HTMLSelectElement | null)?.value;
-      if (domCaja) {
-        effectiveCaja = domCaja;
-      }
-    }
-
-    try {
-      // if still empty, try fetch available cajas and resolve fallback
-      if (!effectiveCaja) {
-        const disponibles = await sharedFetchCajasDisponibles(parkinglotId || undefined);
-        const fallback = sharedResolveCajaFallback(null, disponibles);
-        if (fallback != null) effectiveCaja = String(fallback);
-      }
-    } catch (e) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('abrirCajaAdministrativa:fetchCajas error', e);
-    }
-
-    if (!effectiveCaja) {
-      setError('Selecciona una caja para abrir caja administrativa.');
-      return;
-    }
-
-    try {
-      setError(null);
-      const turno = await createCajaAdministrativa({ parkinglotId: parkinglotId, cajaNumero: Number(effectiveCaja) });
-      // persist in local store
-      if (turno && turno._id) {
-        saveCajaState({ turnoId: String(turno._id), parkinglotId: String(parkinglotId), cajaNumero: Number(turno.numeroCaja ?? turno.cajaNumero ?? effectiveCaja), openedAt: new Date().toISOString() });
-      }
-      // refresh local turno state
-      await fetchAdminCashTurno(parkinglotId || undefined);
-      publishStatus('success', 'Caja administrativa abierta correctamente.');
-    } catch (err: any) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('abrirCajaAdministrativa:error', err);
-      setError(err?.message || 'Error desconocido');
-    }
-  };
-
-  const cerrarCajaAdministrativa = async () => {
-    if (!adminCashTurno?._id) {
-      setError('No hay caja administrativa abierta para cerrar.');
-      return;
-    }
-
-    try {
-      setError(null);
-      await closeCaja(adminCashTurno._id);
-      clearCajaState();
-      await fetchAdminCashTurno(parkinglotId || undefined);
-      publishStatus('success', 'Caja administrativa cerrada correctamente.');
-    } catch (err: any) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('cerrarCajaAdministrativa:error', err);
-      setError(err?.message || 'Error desconocido');
     }
   };
 
@@ -266,7 +179,6 @@ export default function PanelFacturacion() {
     }
     void fetchCajasDisponibles(parkinglotId || undefined);
     void fetchSelectedParkingBillingProfile(parkinglotId || undefined);
-    void fetchAdminCashTurno(parkinglotId || undefined);
     setCajaNumero('');
   }, [parkinglotId, ownerOperations?.selectedParkingId]);
 
@@ -358,13 +270,10 @@ export default function PanelFacturacion() {
     try {
       setError(null);
       publishStatus('info', null);
-      if (estado === 'pagada' && (!adminCashTurno?._id || String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() !== String(parkinglotId || '').trim())) {
-        throw new Error('Debes abrir una caja administrativa para la playa seleccionada antes de marcar cobros como pagados.');
-      }
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado, ...(estado === 'pagada' ? { adminCashTurnoId: adminCashTurno?._id ?? null } : {}) }),
+        body: JSON.stringify({ estado }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la factura');
@@ -379,9 +288,6 @@ export default function PanelFacturacion() {
     try {
       setError(null);
       publishStatus('info', null);
-      if (!adminCashTurno?._id || !(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())) {
-        throw new Error('Debes abrir una caja administrativa para la playa seleccionada antes de acreditar cobros manuales.');
-      }
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: adminCashTurno._id }),
       });
@@ -453,19 +359,11 @@ export default function PanelFacturacion() {
             const cajaIndex = 4; // Documentos=0, Fiscal=1, Cierres=2, Control=3, Caja admin=4
             if (i !== cajaIndex) {
               // require parking selected and that turno corresponds to selected parking
-              if (!parkinglotId) {
-                setError('Selecciona una playa primero.');
-                return;
-              }
-              if (!(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId).trim())) {
-                setError('Abrí caja administrativa para la playa seleccionada primero.');
-                return;
-              }
             }
             setSelectedTabIndex(i);
           }}>
           <Tab.List className="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
-            {['Documentos', 'Fiscal', 'Cierres', 'Control', 'Caja admin'].map((tab) => (
+            {['Facturas', 'Fiscal', 'Cierres', 'Conciliación', 'Caja activa'].map((tab) => (
               <Tab
                 key={tab}
                 className={({ selected }) =>
@@ -493,11 +391,11 @@ export default function PanelFacturacion() {
                 <select value={fiscalStatusFilter} onChange={(e) => setFiscalStatusFilter(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3"><option value="">Todo estado fiscal</option><option value="valid">Válido</option><option value="fallback">Fallback</option><option value="invalid">Inválido</option></select>
               </div>
 
-              {loading ? <p className="text-sm text-gray-500">Cargando documentos billing...</p> : null}
+              {loading ? <p className="text-sm text-gray-500">Cargando documentos...</p> : null}
               {!filteredBillingDocuments.length ? (
-                <p className="text-sm text-gray-500">No hay documentos billing para los filtros seleccionados.</p>
+                <p className="text-sm text-gray-500">No hay documentos para los filtros actuales.</p>
               ) : (
-                <BillingControls enabled={!!(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())}>
+                <BillingControls>
                   <BillingDocumentsList
                     billingDocumentsByPeriod={billingDocumentsByPeriod}
                     acreditarDocumento={acreditarDocumento}
@@ -669,12 +567,12 @@ export default function PanelFacturacion() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Control y conciliación</h2>
-                  <p className="mt-1 text-sm text-gray-500">Conciliación de pagos y ejecución del control financiero automático del módulo billing.</p>
+                  <p className="mt-1 text-sm text-gray-500">Conciliación de pagos y control financiero dentro del contexto operativo activo.</p>
                 </div>
                 <button onClick={() => void runFinancialControl()} className="rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300">Ejecutar control financiero</button>
               </div>
 
-              <BillingControls enabled={!!(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())}>
+              <BillingControls>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
                   <input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Referencia de pago electrónico" className="rounded-xl border border-gray-300 px-4 py-3" />
                   <button onClick={() => void reconcilePaymentReference()} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">Conciliar pago</button>
@@ -689,15 +587,15 @@ export default function PanelFacturacion() {
 
             <Tab.Panel className="space-y-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Caja administrativa</h2>
-                <p className="mt-1 text-sm text-gray-500">Apertura/cierre de caja para cobros administrativos y de owner.</p>
+                <h2 className="text-2xl font-bold text-gray-900">Caja activa</h2>
+                <p className="mt-1 text-sm text-gray-500">Referencia del contexto operativo actual para la playa seleccionada.</p>
               </div>
 
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <label htmlFor="admin-parking-select" className="sr-only">Playa</label>
                   <select id="admin-parking-select" value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
-                    <option value="">Seleccionar playa para caja administrativa</option>
+                    <option value="">Seleccionar playa activa</option>
                     {parkingsFacturacion.map((parking) => (
                       <option key={parking._id} value={parking._id}>{parking.name}</option>
                     ))}
@@ -718,21 +616,10 @@ export default function PanelFacturacion() {
                 </div>
 
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 space-y-2">
-                {loadingAdminCash ? <p>Cargando caja administrativa...</p> : adminCashTurno ? (
-                  <>
-                    <p><strong>Estado:</strong> Caja abierta</p>
-                    <p><strong>Turno:</strong> {adminCashTurno._id}</p>
-                    <p><strong>Playa:</strong> {adminCashTurno.assignedParking || '-'}</p>
-                    <p><strong>Caja:</strong> {adminCashTurno.numeroCaja ?? adminCashTurno.cajaNumero ?? '-'}</p>
-                    <button onClick={async () => { await cerrarCajaAdministrativa(); }} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-semibold text-gray-700 hover:bg-gray-50">Cerrar caja administrativa</button>
-                  </>
-                ) : (
-                  <>
-                    <p>No hay caja administrativa abierta para este usuario.</p>
-                    <button onClick={() => void abrirCajaAdministrativa()} className="rounded-xl border border-gray-300 bg-gray-200 px-4 py-2.5 font-semibold text-gray-800 hover:bg-gray-300">Abrir caja administrativa</button>
-
-                  </>
-                )}
+                <p>El contexto operativo activo se gestiona desde el shell principal.</p>
+                <p><strong>Playa seleccionada:</strong> {parkinglotId || '-'}</p>
+                <p><strong>Caja seleccionada:</strong> {cajaNumero || '-'}</p>
+                <p className="text-xs text-gray-500">Las acciones de apertura y cierre se resuelven fuera de este módulo.</p>
               </div>
             </div>
             </Tab.Panel>
