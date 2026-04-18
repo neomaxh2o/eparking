@@ -4,13 +4,21 @@ import { useMemo, useState } from 'react';
 import { createCajaAdministrativa } from '@/services/cajaService';
 import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 
+type ParkingOption = {
+  _id: string;
+  name: string;
+};
+
 type Props = {
   selectedParkingId: string;
   parkingName?: string;
+  parkingOptions?: ParkingOption[];
+  onParkingChange?: (value: string) => void;
+  parkingSelectorDisabled?: boolean;
   onOpened?: () => Promise<void> | void;
 };
 
-export default function PreOperativeView({ selectedParkingId, parkingName, onOpened }: Props) {
+export default function PreOperativeView({ selectedParkingId, parkingName, parkingOptions = [], onParkingChange, parkingSelectorDisabled = false, onOpened }: Props) {
   const ctx = useOwnerOperations();
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,14 +51,31 @@ export default function PreOperativeView({ selectedParkingId, parkingName, onOpe
 
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-      <div className="space-y-2">
-        <h3 className="text-xl font-bold text-amber-950">Pre-operativo</h3>
-        <p>
-          La operación transaccional está bloqueada hasta abrir caja/turno administrativo para la playa activa.
-        </p>
-        <p>
-          Playa seleccionada: <strong>{parkingName || 'Sin selección'}</strong>
-        </p>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold text-amber-950">Iniciar turno</h3>
+          <p>
+            La operación transaccional está bloqueada hasta abrir caja/turno administrativo para la playa activa.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-amber-950">Playa</label>
+          <select
+            value={selectedParkingId}
+            onChange={(e) => onParkingChange?.(e.target.value)}
+            disabled={parkingSelectorDisabled || opening}
+            className="w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <option value="">Seleccionar playa</option>
+            {parkingOptions.map((parking) => (
+              <option key={parking._id} value={parking._id}>{parking.name}</option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs text-amber-900">
+            Playa seleccionada: <strong>{parkingName || 'Sin selección'}</strong>
+          </p>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">

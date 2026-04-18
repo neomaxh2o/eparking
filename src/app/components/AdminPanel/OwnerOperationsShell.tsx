@@ -344,6 +344,9 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
         <PreOperativeView
           selectedParkingId={selectedParkingId}
           parkingName={selectedParkingName}
+          parkingOptions={ownerParkings.map((parking) => ({ _id: parking._id, name: parking.name }))}
+          onParkingChange={(value) => { setSelectedParkingId(value); bumpRefreshToken(); }}
+          parkingSelectorDisabled={loading}
           onOpened={() => {
             bumpRefreshToken();
             setActiveTab('reservations');
@@ -380,24 +383,28 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       {!isPreOperativeEntry ? <OperationalHeader selectedParkingId={selectedParkingId} /> : null}
 
       <div className="dashboard-section overflow-hidden p-4 md:p-5 space-y-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-700">Playa</label>
-            <select value={selectedParkingId} onChange={(e) => { setSelectedParkingId(e.target.value); bumpRefreshToken(); }} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loading}>
-              <option value="">Todas las playas del owner</option>
-              {ownerParkings.map((parking) => (
-                <option key={parking._id} value={parking._id}>{parking.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-            {selectedParkingId ? 'Filtro global aplicado por playa.' : 'Sin filtro global: mostrando alcance total del owner.'}
-          </div>
-        </div>
+        {!isPreOperativeEntry ? (
+          <>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-gray-700">Playa</label>
+                <select value={selectedParkingId} onChange={(e) => { setSelectedParkingId(e.target.value); bumpRefreshToken(); }} className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loading}>
+                  <option value="">Todas las playas del owner</option>
+                  {ownerParkings.map((parking) => (
+                    <option key={parking._id} value={parking._id}>{parking.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                {selectedParkingId ? 'Filtro global aplicado por playa.' : 'Sin filtro global: mostrando alcance total del owner.'}
+              </div>
+            </div>
 
-        <div className={`rounded-2xl border px-4 py-3 text-sm ${STATE_META[operationalState].badge}`}>
-          {STATE_META[operationalState].summary}
-        </div>
+            <div className={`rounded-2xl border px-4 py-3 text-sm ${STATE_META[operationalState].badge}`}>
+              {STATE_META[operationalState].summary}
+            </div>
+          </>
+        ) : null}
 
         {isPreOperativeEntry ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
