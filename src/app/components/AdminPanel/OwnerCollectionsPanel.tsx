@@ -100,7 +100,7 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
     <div className="space-y-5">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Cobranzas</h2>
-        <p className="mt-1 text-sm text-gray-500">Superficie mínima owner-centric para seguimiento y acreditación de cobros de facturas.</p>
+        <p className="mt-1 text-sm text-gray-500">Bloque principal de operación para seguimiento y acreditación de cobros.</p>
       </div>
       {message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div> : null}
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}

@@ -82,9 +82,9 @@ export default function PanelFacturacion() {
     return (
       <div className="space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
-          <h3 className="text-lg font-bold text-slate-900">Facturación operativa</h3>
-          <p className="mt-2">La jornada todavía no está habilitada para operación transaccional.</p>
-          <p className="mt-1">Primero iniciá turno y después se habilitan facturación operativa y cobranzas bajo el contexto visible de playa, caja, turno y estado.</p>
+          <h3 className="text-lg font-bold text-slate-900">Facturación</h3>
+          <p className="mt-2">La jornada todavía no está activa.</p>
+          <p className="mt-1">Iniciá el turno para habilitar facturación y cobranzas.</p>
         </div>
       </div>
     );

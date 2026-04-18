@@ -48,12 +48,19 @@ const STATE_META: Record<OperationalState, { label: string; summary: string; bad
   },
 };
 
-function SectionBlock({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function SectionBlock({ title, description, children, tone = 'default', compact = false }: { title: string; description: string; children: React.ReactNode; tone?: 'default' | 'primary' | 'secondary' | 'muted'; compact?: boolean }) {
+  const toneClass = tone === 'primary'
+    ? 'border-emerald-200 bg-emerald-50/40'
+    : tone === 'secondary'
+      ? 'border-blue-200 bg-blue-50/30'
+      : tone === 'muted'
+        ? 'border-gray-200 bg-gray-50'
+        : 'border-gray-200 bg-white';
   return (
-    <section className="rounded-3xl border border-gray-200 bg-white p-5 md:p-6 space-y-5">
+    <section className={`rounded-3xl ${toneClass} p-5 md:p-6 space-y-5`}>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{title}</p>
-        <p className="mt-2 text-sm text-gray-600">{description}</p>
+        <p className={`mt-2 ${compact ? 'text-xs text-gray-500' : 'text-sm text-gray-600'}`}>{description}</p>
       </div>
       {children}
     </section>
@@ -283,7 +290,7 @@ function InnerOwnerOperationsShell({ ownerId }: { ownerId: string }) {
       ) : null}
 
       {operationalState === 'pre-operativo' ? (
-        <SectionBlock title="Operación" description="Antes de usar herramientas operativas, iniciá el turno de la jornada.">
+        <SectionBlock title="Operación" description="Antes de usar herramientas operativas, iniciá el turno de la jornada." tone="primary">
           <PreOperativeView
             selectedParkingId={selectedParkingId}
             parkingName={selectedParkingName}
@@ -299,14 +306,14 @@ function InnerOwnerOperationsShell({ ownerId }: { ownerId: string }) {
 
       {operationalState === 'operativo' ? (
         <>
-          <SectionBlock title="Operación" description="Herramientas críticas de la jornada. Primero cobranzas y facturación operativa.">
+          <SectionBlock title="Operación" description="Herramientas críticas de la jornada. Primero cobranzas y facturación operativa." tone="primary">
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
               <OwnerCollectionsPanel selectedParkingId={selectedParkingId} />
               <PanelFacturacion />
             </div>
           </SectionBlock>
 
-          <SectionBlock title="Soporte" description="Módulos importantes, pero no críticos en tiempo real. Sin duplicaciones ni accesos paralelos.">
+          <SectionBlock title="Soporte" description="Módulos importantes, pero no críticos en tiempo real. Sin duplicaciones ni accesos paralelos." tone="secondary">
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
               <PanelAbonados />
               <DocumentsModule selectedParkingId={selectedParkingId} />
@@ -314,11 +321,11 @@ function InnerOwnerOperationsShell({ ownerId }: { ownerId: string }) {
             </div>
           </SectionBlock>
 
-          <SectionBlock title="Control" description="KPIs y resumen ejecutivo para leer el estado operativo sin distraer la ejecución principal.">
+          <SectionBlock title="Control" description="KPIs y resumen ejecutivo para leer el estado operativo sin distraer la ejecución principal." compact>
             <OwnerOperationsSummary selectedParkingId={selectedParkingId} />
           </SectionBlock>
 
-          <SectionBlock title="Histórico" description="Cierres, auditoría e histórico como último nivel de navegación operativa.">
+          <SectionBlock title="Histórico" description="Cierres, auditoría e histórico como último nivel de navegación operativa." tone="muted" compact>
             <PanelHistoricoCajas />
           </SectionBlock>
         </>
