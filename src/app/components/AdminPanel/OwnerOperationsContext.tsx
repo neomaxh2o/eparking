@@ -7,7 +7,7 @@ type StatusMessage = {
   text: string;
 };
 
-type OperationalState = 'pre-operativo' | 'operativo' | 'post-cierre';
+type OperationalState = 'pre-operativo' | 'operativo';
 
 type OperationalSnapshot = {
   activeParkingId: string;

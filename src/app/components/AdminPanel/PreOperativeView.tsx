@@ -55,7 +55,7 @@ export default function PreOperativeView({ selectedParkingId, parkingName, parki
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-amber-950">Iniciar turno</h3>
           <p>
-            La operación transaccional está bloqueada hasta abrir caja/turno administrativo para la playa activa.
+            Seleccioná la playa y comenzá la jornada.
           </p>
         </div>
 
@@ -87,7 +87,7 @@ export default function PreOperativeView({ selectedParkingId, parkingName, parki
           {opening ? 'Iniciando turno...' : 'Iniciar turno'}
         </button>
         <div className="rounded-xl border border-amber-300 bg-white/70 px-4 py-2.5 text-xs text-amber-900">
-          Esto abre la caja administrativa y deja el shell en modo operativo.
+          Al iniciar turno se habilita el entorno operativo de la jornada.
         </div>
       </div>
 

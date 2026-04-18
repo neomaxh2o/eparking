@@ -25,7 +25,7 @@ type AdminCashTurno = {
   operatorName?: string;
 };
 
-type OperationalState = 'pre-operativo' | 'operativo' | 'post-cierre';
+type OperationalState = 'pre-operativo' | 'operativo';
 type ShellSection = 'preparacion' | 'operacion' | 'control';
 
 type SectionConfig = {
@@ -69,14 +69,6 @@ const STATE_META: Record<OperationalState, { label: string; summary: string; bad
     recommendedTab: 'reservations',
     primaryAction: 'Gestionar operación',
     secondaryAction: 'Monitorear cajas',
-  },
-  'post-cierre': {
-    label: 'Post-cierre',
-    summary: 'La operación quedó cerrada. Ahora manda el control, fiscal e histórico.',
-    badge: 'border-slate-200 bg-slate-100 text-slate-700',
-    recommendedTab: 'historico-cajas',
-    primaryAction: 'Controlar cierre',
-    secondaryAction: 'Preparar nueva jornada',
   },
 };
 
@@ -231,7 +223,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'No se pudo obtener el estado operativo');
       const turno = (data?.turno ?? null) as AdminCashTurno | null;
-      const nextState: OperationalState = turno?._id || turno?.id ? 'operativo' : ((operationalSnapshot?.operationalState === 'post-cierre') ? 'post-cierre' : 'pre-operativo');
+      const nextState: OperationalState = turno?._id || turno?.id ? 'operativo' : 'pre-operativo';
       setOperationalSnapshot({
         activeParkingId: String(turno?.parkinglotId ?? turno?.assignedParking ?? selectedParkingId ?? ''),
         activeCajaNumero: turno ? String(turno.numeroCaja ?? turno.cajaNumero ?? '') : '',
@@ -247,7 +239,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
         activeCajaNumero: '',
         activeTurnoId: '',
         turnoEstado: '',
-        operationalState: operationalSnapshot?.operationalState === 'post-cierre' ? 'post-cierre' : 'pre-operativo',
+        operationalState: 'pre-operativo',
         resolved: true,
       });
     } finally {
@@ -279,7 +271,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       label: 'Estado actual',
       section: 'preparacion',
       description: 'Resumen ejecutivo del owner y de la playa filtrada.',
-      states: ['pre-operativo', 'operativo', 'post-cierre'],
+      states: ['pre-operativo', 'operativo'],
       content: <OwnerOperationsSummary selectedParkingId={selectedParkingId} />,
     },
     {
@@ -287,7 +279,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       label: 'Herramientas comerciales',
       section: 'preparacion',
       description: 'Abonados, altas y preparación comercial sin depender del cierre.',
-      states: ['pre-operativo', 'operativo', 'post-cierre'],
+      states: ['pre-operativo', 'operativo'],
       content: <PanelAbonados />,
     },
     {
@@ -304,7 +296,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       label: 'Cajas e histórico',
       section: 'control',
       description: 'Monitoreo de cajas online e histórico de cierres.',
-      states: ['pre-operativo', 'operativo', 'post-cierre'],
+      states: ['pre-operativo', 'operativo'],
       emphasis: 'primary',
       content: <div className="space-y-6"><PanelCajasOnline /><PanelHistoricoCajas /></div>,
     },
@@ -313,7 +305,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
       label: 'Fiscal y control',
       section: 'control',
       description: 'Configuración fiscal, validaciones y soporte al cierre.',
-      states: ['pre-operativo', 'operativo', 'post-cierre'],
+      states: ['pre-operativo', 'operativo'],
       content: <ParkingBillingProfilePanel ownerId={ownerId} />,
     },
   ], [ownerId, operationalState, selectedParkingId]);
@@ -329,7 +321,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
   }, [activeTab, safeActiveTab, setActiveTab]);
 
   const workArea = (() => {
-    if ((operationalState === 'pre-operativo' || operationalState === 'post-cierre') && safeActiveTab === 'facturacion') {
+    if (operationalState === 'pre-operativo' && safeActiveTab === 'facturacion') {
       return (
         <PreOperativeView
           selectedParkingId={selectedParkingId}
@@ -348,10 +340,8 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
     if (operationalState !== 'operativo' && safeActiveTab === 'reservations') {
       return (
         <BlockedState
-          title={operationalState === 'post-cierre' ? 'Operación cerrada' : 'Operación todavía no iniciada'}
-          description={operationalState === 'post-cierre'
-            ? 'La jornada ya se cerró. Pasá a Control para histórico/fiscal o reiniciá una nueva operación desde Preparación.'
-            : 'Las cobranzas se habilitan cuando abrís caja/turno para la playa activa.'}
+          title={'Operación todavía no iniciada'}
+          description={'Las cobranzas se habilitan cuando iniciás turno para la playa activa.'}
         />
       );
     }
@@ -367,13 +357,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
 
   const isPreOperativeEntry = operationalState === 'pre-operativo';
   const isActiveEntry = operationalState === 'operativo';
-  const isClosedEntry = operationalState === 'post-cierre';
   const preOperativePrimary = sections.find((item) => item.key === 'facturacion');
-  const closedSections = {
-    preparacion: sectionsByGroup.preparacion.filter((item) => item.key === 'users'),
-    operacion: [] as SectionConfig[],
-    control: sectionsByGroup.control,
-  };
 
   const closeTurno = async () => {
     if (!operationalSnapshot?.activeTurnoId) return;
@@ -392,10 +376,10 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
         activeCajaNumero: '',
         activeTurnoId: '',
         turnoEstado: '',
-        operationalState: 'post-cierre',
+        operationalState: 'pre-operativo',
         resolved: true,
       });
-      ctx?.setStatusMessage?.({ type: 'success', text: 'Caja/turno administrativo cerrado. El shell quedó en modo consulta.' });
+      ctx?.setStatusMessage?.({ type: 'success', text: 'Turno cerrado. El shell volvió a pre-operativo.' });
       ctx?.bumpRefreshToken?.();
     } catch (err: any) {
       setOperationalError(err.message || 'Error desconocido');
@@ -441,17 +425,6 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
           </>
         ) : null}
 
-        {isClosedEntry ? (
-          <>
-            <div className={`rounded-2xl border px-4 py-3 text-sm ${STATE_META[operationalState].badge}`}>
-              {STATE_META[operationalState].summary}
-            </div>
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-              {closedSections.preparacion.length ? <SectionCard section="preparacion" state={operationalState} items={closedSections.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} /> : null}
-              {closedSections.control.length ? <SectionCard section="control" state={operationalState} items={closedSections.control} activeTab={safeActiveTab} onSelect={setActiveTab} /> : null}
-            </div>
-          </>
-        ) : null}
 
         {isPreOperativeEntry ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
