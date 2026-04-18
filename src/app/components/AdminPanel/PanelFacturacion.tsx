@@ -24,8 +24,6 @@ function classNames(...classes: string[]) {
 
 export default function PanelFacturacion() {
   const ownerOperations = useOwnerOperations();
-  const operationalState = ownerOperations?.operationalState || 'pre-operativo';
-  const isOperationalActive = operationalState === 'operativo';
   const OPERATIONS_ENABLED = (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_ADMIN_OPERATIONS_ENABLED === 'true') || Boolean(ownerOperations);
   if (!OPERATIONS_ENABLED) {
     return (
@@ -73,18 +71,6 @@ export default function PanelFacturacion() {
   const [selectedParkingBillingProfile, setSelectedParkingBillingProfile] = useState<any | null>(null);
   const [loadingParkingBillingProfile, setLoadingParkingBillingProfile] = useState(false);
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
-
-  if (!isOperationalActive) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
-          <h3 className="text-lg font-bold text-slate-900">Facturación</h3>
-          <p className="mt-2">La jornada todavía no está activa.</p>
-          <p className="mt-1">Iniciá el turno para habilitar facturación y cobranzas.</p>
-        </div>
-      </div>
-    );
-  }
 
   const fetchBillingDocuments = async () => {
     try {
@@ -289,7 +275,7 @@ export default function PanelFacturacion() {
       setError(null);
       publishStatus('info', null);
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: adminCashTurno._id }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic' }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo acreditar el pago');

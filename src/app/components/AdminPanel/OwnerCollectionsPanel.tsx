@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 
 type BillingDoc = {
   _id: string;
@@ -18,9 +17,6 @@ type BillingDoc = {
 };
 
 export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedParkingId?: string }) {
-  const ownerOperations = useOwnerOperations();
-  const operationalState = ownerOperations?.operationalState || 'pre-operativo';
-  const isOperationalActive = operationalState === 'operativo';
   const [docs, setDocs] = useState<BillingDoc[]>([]);
   const [paymentReference, setPaymentReference] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -42,10 +38,6 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
     try {
       setMessage(null);
       setError(null);
-      if (!isOperationalActive) {
-        setError('Las cobranzas solo se habilitan con turno/caja activa.');
-        return;
-      }
       if (!paymentReference.trim()) {
         setError('Ingresá una referencia de pago.');
         return;
@@ -68,10 +60,6 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
     try {
       setMessage(null);
       setError(null);
-      if (!isOperationalActive) {
-        setError('Las cobranzas solo se habilitan con turno/caja activa.');
-        return;
-      }
       const res = await fetch(`/api/v2/billing/documents/${invoiceId}/acreditar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,16 +73,6 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
       setError(err.message || 'Error desconocido');
     }
   };
-
-  if (!isOperationalActive) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
-        <h2 className="text-xl font-bold text-slate-900">Cobranzas</h2>
-        <p className="mt-2">La jornada todavía no está habilitada para cobros o acreditaciones.</p>
-        <p className="mt-1">Primero iniciá turno. Cuando el estado sea operativo, este módulo se habilita dentro del contexto de playa, caja, turno y estado.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-5">
