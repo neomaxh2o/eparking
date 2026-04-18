@@ -267,10 +267,10 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
   const sections = useMemo<SectionConfig[]>(() => [
     {
       key: 'facturacion',
-      label: 'Iniciar turno',
-      section: 'preparacion',
-      description: 'Abrir caja/turno y pasar de preparación a operación real.',
-      states: ['pre-operativo', 'post-cierre', 'operativo'],
+      label: 'Facturación operativa',
+      section: 'operacion',
+      description: 'Facturación operativa habilitada solo con turno/caja activa.',
+      states: ['operativo'],
       emphasis: 'primary',
       content: <PanelFacturacion />,
     },

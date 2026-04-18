@@ -8,13 +8,14 @@ import BillingDocumentsList from '@/modules/billing/components/BillingDocumentsL
 import ParkingBillingProfileQuickEditor from '@/modules/billing/components/ParkingBillingProfileQuickEditor';
 import type { BillingDocument } from '@/modules/billing/types/billing.types';
 import BillingControls from './BillingControls';
+import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 import {
   fetchCajasDisponibles as sharedFetchCajasDisponibles,
   resolveCajaFallback as sharedResolveCajaFallback,
   toCents as sharedToCents,
   fromCents as sharedFromCents,
   logger as sharedLogger,
-} from '@/modules/turnos/shared';
+} from '@/modules/turnos/shared/index';
 
 import { createCajaAdministrativa, getCajaActual, closeCaja } from '@/services/cajaService';
 import { saveCajaState, loadCajaState, clearCajaState } from '@/store/caja/actions';
@@ -24,7 +25,10 @@ function classNames(...classes: string[]) {
 }
 
 export default function PanelFacturacion() {
-  const OPERATIONS_ENABLED = (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_ADMIN_OPERATIONS_ENABLED === 'true');
+  const ownerOperations = useOwnerOperations();
+  const operationalState = ownerOperations?.operationalState || 'pre-operativo';
+  const isOperationalActive = operationalState === 'operativo';
+  const OPERATIONS_ENABLED = (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_ADMIN_OPERATIONS_ENABLED === 'true') || Boolean(ownerOperations);
   if (!OPERATIONS_ENABLED) {
     return (
       <div className="space-y-6">
@@ -55,6 +59,12 @@ export default function PanelFacturacion() {
   const [paymentReference, setPaymentReference] = useState('');
   const [reconcileSummary, setReconcileSummary] = useState<any | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const publishStatus = (type: 'success' | 'error' | 'info', text: string | null) => {
+    if (ownerOperations?.setStatusMessage) {
+      ownerOperations.setStatusMessage(text ? { type, text } : null);
+    }
+    setMessage(text);
+  };
   const [closureMessage, setClosureMessage] = useState<string | null>(null);
   const [selectedClosure, setSelectedClosure] = useState<any | null>(null);
   const [parkinglotId, setParkinglotId] = useState('');
@@ -67,6 +77,18 @@ export default function PanelFacturacion() {
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
   const [adminCashTurno, setAdminCashTurno] = useState<any | null>(null);
   const [loadingAdminCash, setLoadingAdminCash] = useState(false);
+
+  if (!isOperationalActive) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
+          <h3 className="text-lg font-bold text-slate-900">Facturación operativa</h3>
+          <p className="mt-2">La jornada todavía no está habilitada para operación transaccional.</p>
+          <p className="mt-1">Primero iniciá turno y después se habilitan facturación operativa y cobranzas bajo el contexto visible de playa, caja, turno y estado.</p>
+        </div>
+      </div>
+    );
+  }
 
   const fetchBillingDocuments = async () => {
     try {
@@ -155,7 +177,7 @@ export default function PanelFacturacion() {
       }
       // refresh local turno state
       await fetchAdminCashTurno(parkinglotId || undefined);
-      setMessage('Caja administrativa abierta correctamente.');
+      publishStatus('success', 'Caja administrativa abierta correctamente.');
     } catch (err: any) {
       ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('abrirCajaAdministrativa:error', err);
       setError(err?.message || 'Error desconocido');
@@ -173,7 +195,7 @@ export default function PanelFacturacion() {
       await closeCaja(adminCashTurno._id);
       clearCajaState();
       await fetchAdminCashTurno(parkinglotId || undefined);
-      setMessage('Caja administrativa cerrada correctamente.');
+      publishStatus('success', 'Caja administrativa cerrada correctamente.');
     } catch (err: any) {
       ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('cerrarCajaAdministrativa:error', err);
       setError(err?.message || 'Error desconocido');
@@ -238,11 +260,15 @@ export default function PanelFacturacion() {
   }, [invoiceSourceFilter]);
 
   useEffect(() => {
+    if (ownerOperations?.selectedParkingId && ownerOperations.selectedParkingId !== parkinglotId) {
+      setParkinglotId(ownerOperations.selectedParkingId);
+      return;
+    }
     void fetchCajasDisponibles(parkinglotId || undefined);
     void fetchSelectedParkingBillingProfile(parkinglotId || undefined);
     void fetchAdminCashTurno(parkinglotId || undefined);
     setCajaNumero('');
-  }, [parkinglotId]);
+  }, [parkinglotId, ownerOperations?.selectedParkingId]);
 
   const filteredBillingDocuments = useMemo(() => {
     return billingDocuments.filter((f) => {
@@ -292,12 +318,12 @@ export default function PanelFacturacion() {
   const runFinancialControl = async () => {
     try {
       setError(null);
-      setMessage(null);
+      publishStatus('info', null);
       const res = await fetch('/api/v2/abonados/financial/run', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo ejecutar el control financiero');
       setFinancialRunSummary(data);
-      setMessage('Control financiero ejecutado correctamente.');
+      publishStatus('success', 'Control financiero ejecutado correctamente.');
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -307,7 +333,7 @@ export default function PanelFacturacion() {
   const reconcilePaymentReference = async () => {
     try {
       setError(null);
-      setMessage(null);
+      publishStatus('info', null);
       setReconcileSummary(null);
       if (!paymentReference.trim()) {
         setError('Debes ingresar una referencia de pago.');
@@ -321,7 +347,7 @@ export default function PanelFacturacion() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo conciliar el pago');
       setReconcileSummary(data);
-      setMessage('Conciliación de pago ejecutada correctamente.');
+      publishStatus('success', 'Conciliación de pago ejecutada correctamente.');
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -331,13 +357,18 @@ export default function PanelFacturacion() {
   const marcarDocumento = async (documentId: string, estado: 'pagada' | 'vencida' | 'cancelada') => {
     try {
       setError(null);
-      setMessage(null);
+      publishStatus('info', null);
+      if (estado === 'pagada' && (!adminCashTurno?._id || String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() !== String(parkinglotId || '').trim())) {
+        throw new Error('Debes abrir una caja administrativa para la playa seleccionada antes de marcar cobros como pagados.');
+      }
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado }),
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado, ...(estado === 'pagada' ? { adminCashTurnoId: adminCashTurno?._id ?? null } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la factura');
-      setMessage(`Factura actualizada a ${estado}.`);
+      publishStatus('success', `Factura actualizada a ${estado}.`);
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -347,7 +378,7 @@ export default function PanelFacturacion() {
   const acreditarDocumento = async (documentId: string) => {
     try {
       setError(null);
-      setMessage(null);
+      publishStatus('info', null);
       if (!adminCashTurno?._id || !(adminCashTurno && String(adminCashTurno.assignedParking || adminCashTurno.parkinglotId || '').trim() === String(parkinglotId || '').trim())) {
         throw new Error('Debes abrir una caja administrativa para la playa seleccionada antes de acreditar cobros manuales.');
       }
@@ -356,7 +387,7 @@ export default function PanelFacturacion() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo acreditar el pago');
-      setMessage('Pago acreditado automáticamente.');
+      publishStatus('success', 'Pago acreditado automáticamente.');
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -400,7 +431,7 @@ export default function PanelFacturacion() {
   };
 
   useEffect(() => {
-    setMessage(null);
+    publishStatus('info', null);
     setError(null);
     setClosureMessage(null);
     setReconcileSummary(null);
@@ -649,7 +680,7 @@ export default function PanelFacturacion() {
                   <button onClick={() => void reconcilePaymentReference()} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">Conciliar pago</button>
                 </div>
 
-                {message ? <p className="text-sm text-green-700">{message}</p> : null}
+                {(!ownerOperations?.setStatusMessage && message) ? <p className="text-sm text-green-700">{message}</p> : null}
                 {error ? <p className="text-sm text-red-600">{error}</p> : null}
                 {reconcileSummary ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><p><strong>Referencia conciliada:</strong> {reconcileSummary.paymentReference || '-'}</p><p><strong>Facturas actualizadas:</strong> {reconcileSummary.invoicesUpdated ?? 0}</p><p><strong>Abonados reactivados:</strong> {reconcileSummary.abonadosReactivated ?? 0}</p></div> : null}
                 {financialRunSummary ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700"><p><strong>Última ejecución:</strong> {financialRunSummary.timestamp ? new Date(financialRunSummary.timestamp).toLocaleString() : '-'}</p><p><strong>Facturas revisadas:</strong> {financialRunSummary.invoicesChecked ?? 0}</p><p><strong>Facturas marcadas vencidas:</strong> {financialRunSummary.invoicesMarkedOverdue ?? 0}</p><p><strong>Abonados suspendidos:</strong> {financialRunSummary.abonadosSuspended ?? 0}</p></div> : null}
