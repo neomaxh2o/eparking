@@ -11,6 +11,7 @@ import PanelTarifas from '@/app/components/AdminPanel/PanelTarifas';
 import PanelHistoricoCajas from '@/app/components/AdminPanel/PanelHistoricoCajas';
 import PanelAbonados from '@/app/components/AdminPanel/PanelAbonados';
 import PanelFacturacion from '@/app/components/AdminPanel/PanelFacturacion';
+import OwnerOperationsShell from '@/app/components/AdminPanel/OwnerOperationsShell';
 import { ClientsNavigationProvider } from '@/app/components/AdminPanel/ClientsNavigationContext';
 
 import type { TabKey, TabConfig } from '@/interfaces/admin';
@@ -36,13 +37,17 @@ export default function AdminPanel() {
   const userRole = session?.user?.role || 'user';
 
   const areaTabs = useMemo<Record<AdminAreaKey, AreaTabConfig[]>>(() => ({
-    operacion: [
-      { key: 'facturacion', label: 'Abrir turno', content: <PanelFacturacion /> },
-      { key: 'reservations', label: 'Reservas', content: <PanelReservas /> },
-      ...(userRole === 'owner' || userRole === 'admin'
-        ? [{ key: 'historico-cajas' as const, label: 'Histórico de cajas', content: <PanelHistoricoCajas /> }]
-        : []),
-    ],
+    operacion: userRole === 'owner'
+      ? [
+          { key: 'facturacion', label: 'Operaciones', content: <OwnerOperationsShell ownerId={userId} activeTab={activeTab} setActiveTab={setActiveTab} /> },
+        ]
+      : [
+          { key: 'facturacion', label: 'Abrir turno', content: <PanelFacturacion /> },
+          { key: 'reservations', label: 'Reservas', content: <PanelReservas /> },
+          ...(userRole === 'admin'
+            ? [{ key: 'historico-cajas' as const, label: 'Histórico de cajas', content: <PanelHistoricoCajas /> }]
+            : []),
+        ],
     clientes: [
       {
         key: 'users',
@@ -80,6 +85,8 @@ export default function AdminPanel() {
   const safeActiveTab = currentAreaTabs.some((tab) => tab.key === activeTab)
     ? activeTab
     : currentAreaTabs[0]?.key;
+
+  const hideInnerTabs = activeArea === 'operacion' && userRole === 'owner';
 
   const tabs: TabConfig[] = currentAreaTabs.map((tab) => ({
     key: tab.key,
@@ -134,12 +141,12 @@ export default function AdminPanel() {
         </div>
 
         <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-          {activeArea === 'operacion' && 'Flujo diario y operativo: facturación, reservas e histórico de cajas.'}
+          {activeArea === 'operacion' && (userRole === 'owner' ? 'Entrada operativa del owner: iniciar turno y luego continuar con el flujo operativo.' : 'Flujo diario y operativo: facturación, reservas e histórico de cajas.')}
           {activeArea === 'clientes' && 'Gestión comercial y administrativa de usuarios y abonados.'}
           {activeArea === 'infraestructura' && 'Configuración estructural de playas, tarifas y base operativa.'}
         </div>
 
-        <Tabs tabs={tabs} activeTab={safeActiveTab as TabKey} setActiveTab={setActiveTab} />
+        {!hideInnerTabs ? <Tabs tabs={tabs} activeTab={safeActiveTab as TabKey} setActiveTab={setActiveTab} /> : null}
       </div>
 
       <div className="dashboard-section p-4 md:p-6">

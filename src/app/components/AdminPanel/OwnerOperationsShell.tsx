@@ -277,7 +277,7 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
   const sections = useMemo<SectionConfig[]>(() => [
     {
       key: 'facturacion',
-      label: 'Activación de jornada',
+      label: 'Iniciar turno',
       section: 'preparacion',
       description: 'Abrir caja/turno y pasar de preparación a operación real.',
       states: ['pre-operativo', 'post-cierre', 'operativo'],
@@ -372,9 +372,12 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
     control: sections.filter((item) => item.section === 'control'),
   };
 
+  const isPreOperativeEntry = operationalState === 'pre-operativo';
+  const preOperativePrimary = sections.find((item) => item.key === 'facturacion');
+
   return (
     <div className="space-y-5">
-      <OperationalHeader selectedParkingId={selectedParkingId} />
+      {!isPreOperativeEntry ? <OperationalHeader selectedParkingId={selectedParkingId} /> : null}
 
       <div className="dashboard-section overflow-hidden p-4 md:p-5 space-y-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
@@ -396,11 +399,35 @@ function InnerOwnerOperationsShell({ ownerId, activeTab, setActiveTab }: { owner
           {STATE_META[operationalState].summary}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <SectionCard section="preparacion" state={operationalState} items={sectionsByGroup.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
-          <SectionCard section="operacion" state={operationalState} items={sectionsByGroup.operacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
-          <SectionCard section="control" state={operationalState} items={sectionsByGroup.control} activeTab={safeActiveTab} onSelect={setActiveTab} />
-        </div>
+        {isPreOperativeEntry ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="mb-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Entry point pre-operativo</p>
+              <p className="mt-1 text-sm text-amber-900">Sin turno/caja activa, el único menú operativo disponible es iniciar turno.</p>
+            </div>
+            {preOperativePrimary ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab(preOperativePrimary.key)}
+                className="w-full rounded-2xl border border-emerald-300 bg-white px-4 py-4 text-left transition hover:bg-emerald-50"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">{preOperativePrimary.label}</p>
+                    <p className="mt-1 text-xs text-gray-600">{preOperativePrimary.description}</p>
+                  </div>
+                  <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">Único menú</span>
+                </div>
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <SectionCard section="preparacion" state={operationalState} items={sectionsByGroup.preparacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
+            <SectionCard section="operacion" state={operationalState} items={sectionsByGroup.operacion} activeTab={safeActiveTab} onSelect={setActiveTab} />
+            <SectionCard section="control" state={operationalState} items={sectionsByGroup.control} activeTab={safeActiveTab} onSelect={setActiveTab} />
+          </div>
+        )}
       </div>
 
       {statusMessage ? (
