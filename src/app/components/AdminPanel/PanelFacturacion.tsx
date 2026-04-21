@@ -71,6 +71,8 @@ export default function PanelFacturacion() {
   const [selectedParkingBillingProfile, setSelectedParkingBillingProfile] = useState<any | null>(null);
   const [loadingParkingBillingProfile, setLoadingParkingBillingProfile] = useState(false);
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
+  const activeAdminCashTurnoId = String(ownerOperations?.operationalSnapshot?.activeTurnoId ?? '').trim();
+  const activeAdminCashParkingId = String(ownerOperations?.operationalSnapshot?.activeParkingId ?? '').trim();
 
   const fetchBillingDocuments = async () => {
     try {
@@ -256,10 +258,18 @@ export default function PanelFacturacion() {
     try {
       setError(null);
       publishStatus('info', null);
+      if (estado === 'pagada') {
+        if (!activeAdminCashTurnoId) {
+          throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de marcar como pagada.');
+        }
+        if (parkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== String(parkinglotId)) {
+          throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
+        }
+      }
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado }),
+        body: JSON.stringify({ estado, ...(estado === 'pagada' ? { adminCashTurnoId: activeAdminCashTurnoId } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la factura');
@@ -274,8 +284,14 @@ export default function PanelFacturacion() {
     try {
       setError(null);
       publishStatus('info', null);
+      if (!activeAdminCashTurnoId) {
+        throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de acreditar pagos.');
+      }
+      if (parkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== String(parkinglotId)) {
+        throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
+      }
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic' }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: activeAdminCashTurnoId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo acreditar el pago');

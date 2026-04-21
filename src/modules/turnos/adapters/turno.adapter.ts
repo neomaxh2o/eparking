@@ -27,15 +27,15 @@ export function adaptTurnoFromLegacy(input: unknown): TurnoCaja {
   const raw = (asRecord(input) ?? {}) as LegacyTurnoRecord;
   const liquidacionRaw = asRecord(raw.liquidacion) as LegacyLiquidacionRecord | null;
   const estadoRaw = String(raw.estado ?? '').toLowerCase();
-  const estadoMap: Record<string, string> = {
-    pendiente_liquidacion: 'PENDIENTE_LIQUIDACION',
-    pendiente: 'PENDIENTE',
-    abierto: 'ABIERTO',
-    en_curso: 'EN_CURSO',
-    cerrado: 'CERRADO',
-    liquidado: 'LIQUIDADO',
+  const estadoMap: Record<string, TurnoCaja['estado']> = {
+    pendiente_liquidacion: 'pendiente_liquidacion',
+    pendiente: 'pendiente_liquidacion',
+    abierto: 'abierto',
+    en_curso: 'abierto',
+    cerrado: 'cerrado',
+    liquidado: 'liquidado',
   };
-  const estado = estadoMap[estadoRaw] ?? 'ABIERTO';
+  const estado = estadoMap[estadoRaw] ?? 'abierto';
 
   return {
     _id: String(raw._id ?? ''),

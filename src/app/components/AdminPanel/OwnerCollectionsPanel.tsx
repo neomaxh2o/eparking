@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 
 type BillingDoc = {
   _id: string;
@@ -17,6 +18,9 @@ type BillingDoc = {
 };
 
 export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedParkingId?: string }) {
+  const ownerOperations = useOwnerOperations();
+  const activeTurnoId = String(ownerOperations?.operationalSnapshot?.activeTurnoId ?? '').trim();
+  const activeTurnoParkingId = String(ownerOperations?.operationalSnapshot?.activeParkingId ?? '').trim();
   const [docs, setDocs] = useState<BillingDoc[]>([]);
   const [paymentReference, setPaymentReference] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -60,10 +64,16 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
     try {
       setMessage(null);
       setError(null);
+      if (!activeTurnoId) {
+        throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de acreditar cobros.');
+      }
+      if (selectedParkingId && activeTurnoParkingId && activeTurnoParkingId !== String(selectedParkingId)) {
+        throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
+      }
       const res = await fetch(`/api/v2/billing/documents/${invoiceId}/acreditar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentProvider: 'manual', paymentMethod: 'admin-cash' }),
+        body: JSON.stringify({ paymentProvider: 'manual', paymentMethod: 'admin-cash', adminCashTurnoId: activeTurnoId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo acreditar el documento');

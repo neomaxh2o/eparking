@@ -35,6 +35,10 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
 
   // prefer externalTurno (passed from parent) when present; otherwise use hook turno
   const turno = externalTurno ?? turnoHook;
+  const turnoEstadoRaw = String(turno?.estado ?? '').trim();
+  const turnoEstadoNormalizado = turnoEstadoRaw.toLowerCase();
+  const turnoAbierto = turnoEstadoNormalizado === 'abierto' || turnoEstadoNormalizado === 'en_curso';
+  const turnoEstadoLabel = turnoEstadoNormalizado ? turnoEstadoNormalizado.toUpperCase() : turnoEstadoRaw;
 
   // useEffect to propagate changes from hook to parent
   useEffect(() => {
@@ -132,8 +136,8 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
               </div>
 
               <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                <span className={`h-2.5 w-2.5 rounded-full ${turno.estado === 'ABIERTO' ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
-                {turno.estado}
+                <span className={`h-2.5 w-2.5 rounded-full ${turnoAbierto ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                {turnoEstadoLabel || turno.estado}
               </div>
             </div>
 
@@ -147,7 +151,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
             </div>
 
             <div className="mt-4 flex gap-3">
-              {turno.estado === 'abierto' ? (
+              {turnoAbierto ? (
                 <>
                   <button disabled={loadingClose} onClick={async () => {
                     
@@ -240,7 +244,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
             <h4 className="text-base font-bold text-gray-900">Facturas y acreditaciones (acción bajo turno)</h4>
             {loadingBillingDocs ? <p className="text-sm text-gray-500">Cargando facturas...</p> : (
-              <BillingDocumentsList billingDocumentsByPeriod={billingDocumentsByPeriod} acreditarDocumento={acreditarDocumento} marcarDocumento={marcarDocumento} canAcreditarManual={Boolean(turno?._id)} />
+              <BillingDocumentsList billingDocumentsByPeriod={billingDocumentsByPeriod} acreditarDocumento={acreditarDocumento} marcarDocumento={marcarDocumento} />
             )}
           </div>
 

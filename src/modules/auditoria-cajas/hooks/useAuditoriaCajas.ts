@@ -23,14 +23,14 @@ export default function useAuditoriaCajas(){
             turnoNorm = adaptTurnoFromLegacy(turnoRaw)
           } catch (e) {
             // fallback: attempt best-effort normalization
-            const estado = String((turnoRaw && turnoRaw.estado) || '').toLowerCase()
-            turnoNorm = { ...turnoRaw, estado: /abierto|open/.test(estado) ? 'ABIERTO' : estado }
+            const estado = String((turnoRaw && turnoRaw.estado) || '').trim().toLowerCase()
+            turnoNorm = { ...turnoRaw, estado: /abierto|open|en_curso/.test(estado) ? 'abierto' : estado }
           }
         }
         return {
           ...c,
           turno: turnoNorm ?? c.turno,
-          turnoAbiertoNormalized: Boolean((turnoNorm && String(turnoNorm.estado) === 'ABIERTO') || c.turnoAbierto || c.turnoId)
+          turnoAbiertoNormalized: Boolean((turnoNorm && String(turnoNorm.estado).trim().toLowerCase() === 'abierto') || c.turnoAbierto || c.turnoId)
         }
       })
       setCajas(cajasNorm)

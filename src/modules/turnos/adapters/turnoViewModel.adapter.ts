@@ -69,7 +69,7 @@ export function adaptTurnoFromLegacy(turnoRaw: unknown): TurnoViewModel | null {
   const raw = asRecord(turnoRaw);
   if (!raw) return null;
 
-  const estadoRaw = String(raw.estado ?? raw.state ?? '').toLowerCase();
+  const estadoRaw = String(raw.estado ?? raw.state ?? '').trim().toLowerCase();
   const tickets = Array.isArray(raw.tickets)
     ? raw.tickets.map(toTicketViewModel).filter((ticket): ticket is TurnoTicketViewModel => Boolean(ticket))
     : [];

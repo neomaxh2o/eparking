@@ -1,0 +1,12 @@
+admin-cash-request-response.md
+files-changed.txt
+summary-final.md
+branch-review-summary.md
+files-in-diff.txt
+files-to-remove.txt
+merge-readiness.md
+scope-check.md
+src/app/api/v2/facturacion/estado-abonado/route.ts
+src/app/api/v2/facturacion/pagar/route.ts
+# reverted to main behavior to remove incidental branch-only noise:
+src/app/api/v2/billing/test/charge/route.ts
