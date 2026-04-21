@@ -22,7 +22,7 @@ function formatMoney(value?: number) {
   return `$${Number(value ?? 0).toFixed(2)}`;
 }
 
-function formatDate(value?: string) {
+function formatDate(value?: string | Date) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
@@ -185,7 +185,9 @@ export default function TurnoPanelV2({
           {loading && <p className="text-sm text-gray-500">Procesando...</p>}
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-          {renderIngresosSalidas?.(turno.estado ?? null)}
+          {renderIngresosSalidas?.(
+            turno.estado === 'abierto' || turno.estado === 'cerrado' ? turno.estado : null
+          )}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

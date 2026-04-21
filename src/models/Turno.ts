@@ -224,7 +224,11 @@ turnoSchema.index(
   }
 );
 
-const ExistingTurno = models.Turno as ReturnType<typeof model<ITurno>> | undefined;
+const ExistingTurno = models.Turno as {
+  schema?: {
+    path: (name: string) => unknown;
+  };
+} | undefined;
 
 if (ExistingTurno?.schema?.path('estado')) {
   const estadoPath = ExistingTurno.schema.path('estado') as unknown as {

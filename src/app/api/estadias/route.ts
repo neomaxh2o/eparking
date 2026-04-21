@@ -4,6 +4,8 @@ import Estadia, { IEstadia } from '@/models/Estadia';
 import Plaza, { IPlaza } from '@/models/Plaza/Plaza';
 import connectToDatabase from '@/lib/mongoose';
 
+type PlazaFisicaDoc = IPlaza['plazasFisicas'][number];
+
 async function ensureDbConnection() {
   if (mongoose.connection.readyState === 0) {
     await connectToDatabase();
@@ -39,7 +41,7 @@ async function assignAvailableSubplaza(data: Partial<IEstadia>) {
   const plazaModel = await Plaza.findById(plaza._id);
   if (!plazaModel) return { plazaAsignadaId: undefined, subplazaAsignadaNumero: undefined };
 
-  const subplaza = plazaModel.plazasFisicas.find((sp) => sp.estado === 'disponible');
+  const subplaza = plazaModel.plazasFisicas.find((sp: PlazaFisicaDoc) => sp.estado === 'disponible');
   if (!subplaza) {
     return { plazaAsignadaId: undefined, subplazaAsignadaNumero: undefined };
   }
@@ -71,7 +73,7 @@ async function releaseSubplaza(plazaAsignadaId?: unknown, subplazaAsignadaNumero
   const plazaModel = await Plaza.findById(idStr);
   if (!plazaModel) return;
 
-  const subplaza = plazaModel.plazasFisicas.find((sp) => sp.numero === subplazaAsignadaNumero);
+  const subplaza = plazaModel.plazasFisicas.find((sp: PlazaFisicaDoc) => sp.numero === subplazaAsignadaNumero);
   if (!subplaza) return;
 
   subplaza.estado = 'disponible';
@@ -117,7 +119,10 @@ export async function POST(req: NextRequest) {
     const tarifaId = toObjectId(data.tarifaId, 'tarifaId');
 
     let plazaAsignadaId = data.plazaAsignadaId;
-    let subplazaAsignadaNumero = (data.subplazaAsignadaNumero as number | undefined) ?? undefined;
+    const subplazaAsignadaNumeroValue = data.subplazaAsignadaNumero;
+    let subplazaAsignadaNumero = typeof subplazaAsignadaNumeroValue === 'number'
+      ? subplazaAsignadaNumeroValue
+      : undefined;
 
     if (!plazaAsignadaId && data.tipoEstadia) {
       const assigned = await assignAvailableSubplaza(data as Partial<IEstadia>);
@@ -139,7 +144,7 @@ export async function POST(req: NextRequest) {
     if (plazaAsignadaId && subplazaAsignadaNumero !== undefined) {
       const plazaModel = await Plaza.findById(String(plazaAsignadaId));
       if (plazaModel) {
-        const subplaza = plazaModel.plazasFisicas.find((sp) => sp.numero === subplazaAsignadaNumero);
+        const subplaza = plazaModel.plazasFisicas.find((sp: PlazaFisicaDoc) => sp.numero === subplazaAsignadaNumero);
         if (subplaza) {
           subplaza.estadiaId = saved._id.toString();
           if (saved.tipoEstadia === 'libre') {

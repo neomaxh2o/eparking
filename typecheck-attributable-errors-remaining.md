@@ -1,0 +1,56 @@
+# Remaining branch-attributable typecheck errors after fixes
+
+- Main error count: **412**
+- Branch error count: **398**
+- Remaining branch-attributable signatures: **47**
+- Main-only signatures: **61**
+
+## Remaining attributable errors
+
+- .next/types/app/api/auth/[...nextauth]/route.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/auth/[...nextauth]/route"), "config" | "GET" | "DELETE" | "POST" | "PATCH" | "PUT" | "generateStaticParams" | ... 8 more ... | "OPTIONS", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+- .next/types/app/api/caja/ticket/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/estadias/[id]/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/estadias/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/estadias/excedentes/route.ts(2,24): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/excedentes/route.ts' is not a module.
+- .next/types/app/api/estadias/excedentes/route.ts(5,29): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/excedentes/route.ts' is not a module.
+- .next/types/app/api/estadias/extensiones/route.ts(2,24): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/extensiones/route.ts' is not a module.
+- .next/types/app/api/estadias/extensiones/route.ts(5,29): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/extensiones/route.ts' is not a module.
+- .next/types/app/api/estadias2/[id]/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/estadias2/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/estadias2/activas/route.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/activas/route"), "config" | "GET" | "DELETE" | "POST" | "PATCH" | "PUT" | "generateStaticParams" | ... 8 more ... | "OPTIONS", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+- .next/types/app/api/estadias2/activas/route.ts(30,4): error TS2559: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/activas/route")' has no properties in common with type '{ GET?: Function | undefined; HEAD?: Function | undefined; OPTIONS?: Function | undefined; POST?: Function | undefined; PUT?: Function | undefined; ... 10 more ...; maxDuration?: number | undefined; }'.
+- .next/types/app/api/parking/novedades/[id]/route.ts(205,7): error TS2344: Type '{ __tag__: "PUT"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/parking/novedades/[id]/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/parking/novedades/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/parking/reservations/[id]/delete/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/parking/reservations/[id]/update/route.ts(205,7): error TS2344: Type '{ __tag__: "PUT"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/parking/reservations/[id]/update/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/plazas/[id]/route.ts(166,7): error TS2344: Type '{ __tag__: "POST"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/plazas/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; sub?: string | undefined; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/plazas/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; sub?: string | undefined; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/tarifas/[id]/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+- .next/types/app/api/v2/facturacion/estado-abonado/route.ts(2,24): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/estado-abonado/route.js' or its corresponding type declarations.
+- .next/types/app/api/v2/facturacion/estado-abonado/route.ts(5,29): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/estado-abonado/route.js' or its corresponding type declarations.
+- .next/types/app/api/v2/facturacion/pagar/route.ts(2,24): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/pagar/route.js' or its corresponding type declarations.
+- .next/types/app/api/v2/facturacion/pagar/route.ts(5,29): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/pagar/route.js' or its corresponding type declarations.
+- .next/types/app/panel-cajas-online-test/page.ts(2,24): error TS2307: Cannot find module '../../../../src/app/panel-cajas-online-test/page.js' or its corresponding type declarations.
+- .next/types/app/panel-cajas-online-test/page.ts(5,29): error TS2307: Cannot find module '../../../../src/app/panel-cajas-online-test/page.js' or its corresponding type declarations.
+- .next/types/validator.ts(225,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/caja/ticket/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/caja/ticket/[id]">'.
+- .next/types/validator.ts(297,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/estadias/[id]">'.
+- .next/types/validator.ts(332,39): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/excedentes/route.ts' is not a module.
+- .next/types/validator.ts(341,39): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/extensiones/route.ts' is not a module.
+- .next/types/validator.ts(378,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/estadias2/[id]">'.
+- .next/types/validator.ts(387,31): error TS2559: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/activas/route")' has no properties in common with type 'RouteHandlerConfig<"/api/estadias2/activas">'.
+- .next/types/validator.ts(468,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/parking/novedades/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/parking/novedades/[id]">'.
+- .next/types/validator.ts(486,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/parking/reservations/[id]/delete/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/parking/reservations/[id]/delete">'.
+- .next/types/validator.ts(495,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/parking/reservations/[id]/update/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/parking/reservations/[id]/update">'.
+- .next/types/validator.ts(558,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/plazas/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/plazas/[id]">'.
+- .next/types/validator.ts(567,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/plazas/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/plazas">'.
+- .next/types/validator.ts(630,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/tarifas/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/tarifas/[id]">'.
+- .next/types/validator.ts(89,39): error TS2307: Cannot find module '../../src/app/panel-cajas-online-test/page.js' or its corresponding type declarations.
+- .next/types/validator.ts(971,39): error TS2307: Cannot find module '../../src/app/api/v2/facturacion/estado-abonado/route.js' or its corresponding type declarations.
+- .next/types/validator.ts(980,39): error TS2307: Cannot find module '../../src/app/api/v2/facturacion/pagar/route.js' or its corresponding type declarations.
+- src/app/api/estadias/route.ts(198,54): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number | undefined'.
+- src/app/api/v2/abonados/route.ts(145,7): error TS2322: Type 'string' is not assignable to type 'BillingFrequency | undefined'.
+- src/app/components/Users/UserList.tsx(144,15): error TS2322: Type 'import("/root/.openclaw/workspace-bitron/eparking/src/interfaces/user").User' is not assignable to type 'User'.
+- src/modules/parking/hooks/useCreateOrUpdateTarifa.ts(1,52): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/hooks/Parking/useCreateOrUpdateTarifa.ts' is not a module.

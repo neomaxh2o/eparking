@@ -477,6 +477,9 @@ export async function modificarTicket(
       fraccionMinutos?: number;
     };
     prepago: boolean;
+    cantidad: number;
+    cantidadHoras: number;
+    cantidadDias: number;
   }>,
 ) {
   return updateTicket(ticketNumber, {

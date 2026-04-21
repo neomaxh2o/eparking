@@ -34,8 +34,11 @@ export async function PUT(
     const tarifa = await Tarifa.findById(id);
     if (!tarifa) return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
 
-    tarifa[tipo] = (tarifa[tipo] || []).map((s: Record<string, unknown>) =>
-      String(s._id) === subId ? { ...s.toObject ? (s.toObject() as Record<string, unknown>) : s, ...(data as Record<string, unknown>) } : s
+    const currentItems = Array.isArray(tarifa[tipo]) ? tarifa[tipo] : [];
+    tarifa[tipo] = currentItems.map((s: Record<string, unknown> & { toObject?: () => Record<string, unknown> }) =>
+      String(s._id) === subId
+        ? { ...(typeof s.toObject === 'function' ? s.toObject() : s), ...(data as Record<string, unknown>) }
+        : s,
     );
 
     await tarifa.save();

@@ -35,6 +35,14 @@ export default function AdminPanel() {
 
   const userId = session?.user?.id ?? '';
   const userRole = session?.user?.role || 'user';
+  const panelUserRole: 'client' | 'owner' | 'operator' | 'admin' =
+    userRole === 'owner' || userRole === 'operator' || userRole === 'admin' || userRole === 'client'
+      ? userRole
+      : 'client';
+  const tarifasUserRole: 'owner' | 'client' | 'guest' | 'operator' | 'admin' =
+    userRole === 'owner' || userRole === 'client' || userRole === 'guest' || userRole === 'operator' || userRole === 'admin'
+      ? userRole
+      : 'guest';
 
   const areaTabs = useMemo<Record<AdminAreaKey, AreaTabConfig[]>>(() => ({
     operacion: userRole === 'owner'
@@ -75,10 +83,10 @@ export default function AdminPanel() {
       },
     ],
     infraestructura: [
-      { key: 'parkings', label: 'Playas', content: <PanelPlayas ownerId={userId} userRole={userRole} /> },
-      { key: 'tarifas', label: 'Tarifas', content: <PanelTarifas userRole={userRole} /> },
+      { key: 'parkings', label: 'Playas', content: <PanelPlayas ownerId={userId} userRole={panelUserRole} /> },
+      { key: 'tarifas', label: 'Tarifas', content: <PanelTarifas userRole={tarifasUserRole} /> },
     ],
-  }), [userId, userRole]);
+  }), [panelUserRole, tarifasUserRole, userId, userRole]);
 
   const currentAreaTabs = areaTabs[activeArea] ?? [];
 

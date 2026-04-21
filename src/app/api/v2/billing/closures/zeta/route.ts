@@ -6,6 +6,13 @@ import ParkingLot from '@/models/ParkingLot';
 import User from '@/models/User';
 import { assertCanRunZetaClosure, closeBillingZeta } from '@/modules/billing';
 
+type BillingProfileInput = {
+  enabled?: boolean;
+  businessName?: string;
+  documentNumber?: string;
+  pointOfSale?: string;
+};
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -52,7 +59,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (effectiveParkinglotId) {
-    const billingProfile = scopedParking?.billingProfile ?? null;
+    const billingProfile = (scopedParking?.billingProfile && typeof scopedParking.billingProfile === 'object')
+      ? (scopedParking.billingProfile as BillingProfileInput)
+      : null;
     const isBillingProfileValid = Boolean(
       billingProfile &&
       billingProfile.enabled &&
@@ -75,9 +84,9 @@ export async function POST(req: NextRequest) {
       actorUserId: session.user.id,
       ownerId: effectiveOwnerId,
       parkinglotId: effectiveParkinglotId,
-      cajaNumero: b?.cajaNumero ?? null,
-      from: b?.from ?? null,
-      to: b?.to ?? null,
+      cajaNumero: typeof b.cajaNumero === 'number' ? b.cajaNumero : null,
+      from: typeof b.from === 'string' || b.from instanceof Date ? b.from : null,
+      to: typeof b.to === 'string' || b.to instanceof Date ? b.to : null,
     });
 
     return NextResponse.json(closure, { status: 201 });

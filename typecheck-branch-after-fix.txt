@@ -1,0 +1,644 @@
+
+> e-parking@0.1.0 typecheck
+> tsc --noEmit --pretty false
+
+.next/types/app/api/auth/[...nextauth]/route.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/auth/[...nextauth]/route"), "config" | "GET" | "DELETE" | "POST" | "PATCH" | "PUT" | "generateStaticParams" | ... 8 more ... | "OPTIONS", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'authOptions' is incompatible with index signature.
+    Type 'AuthOptions' is not assignable to type 'never'.
+.next/types/app/api/caja/ticket/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/estadias/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/estadias/[id]/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/estadias/excedentes/route.ts(2,24): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/excedentes/route.ts' is not a module.
+.next/types/app/api/estadias/excedentes/route.ts(5,29): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/excedentes/route.ts' is not a module.
+.next/types/app/api/estadias/extensiones/route.ts(2,24): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/extensiones/route.ts' is not a module.
+.next/types/app/api/estadias/extensiones/route.ts(5,29): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/extensiones/route.ts' is not a module.
+.next/types/app/api/estadias2/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/estadias2/[id]/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/estadias2/activas/route.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/activas/route"), "config" | "GET" | "DELETE" | "POST" | "PATCH" | "PUT" | "generateStaticParams" | ... 8 more ... | "OPTIONS", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'handler' is incompatible with index signature.
+    Type '(req: NextApiRequest, res: NextApiResponse) => Promise<void>' is not assignable to type 'never'.
+.next/types/app/api/estadias2/activas/route.ts(30,4): error TS2559: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/activas/route")' has no properties in common with type '{ GET?: Function | undefined; HEAD?: Function | undefined; OPTIONS?: Function | undefined; POST?: Function | undefined; PUT?: Function | undefined; ... 10 more ...; maxDuration?: number | undefined; }'.
+.next/types/app/api/parking/novedades/[id]/route.ts(49,7): error TS2344: Type '{ __tag__: "GET"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/parking/novedades/[id]/route.ts(205,7): error TS2344: Type '{ __tag__: "PUT"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/parking/novedades/[id]/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/parking/reservations/[id]/delete/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/parking/reservations/[id]/update/route.ts(205,7): error TS2344: Type '{ __tag__: "PUT"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/parking/reservations/[id]/update/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/plazas/[id]/route.ts(166,7): error TS2344: Type '{ __tag__: "POST"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/plazas/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; sub?: string | undefined; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; sub?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/plazas/route.ts(283,7): error TS2344: Type '{ __tag__: "PATCH"; __param_position__: "second"; __param_type__: { params: { id: string; sub?: string | undefined; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; sub?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/tarifas/[id]/route.ts(244,7): error TS2344: Type '{ __tag__: "DELETE"; __param_position__: "second"; __param_type__: { params: { id: string; }; }; }' does not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible between these types.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/types/app/api/v2/facturacion/estado-abonado/route.ts(2,24): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/estado-abonado/route.js' or its corresponding type declarations.
+.next/types/app/api/v2/facturacion/estado-abonado/route.ts(5,29): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/estado-abonado/route.js' or its corresponding type declarations.
+.next/types/app/api/v2/facturacion/pagar/route.ts(2,24): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/pagar/route.js' or its corresponding type declarations.
+.next/types/app/api/v2/facturacion/pagar/route.ts(5,29): error TS2307: Cannot find module '../../../../../../../src/app/api/v2/facturacion/pagar/route.js' or its corresponding type declarations.
+.next/types/app/panel-cajas-online-test/page.ts(2,24): error TS2307: Cannot find module '../../../../src/app/panel-cajas-online-test/page.js' or its corresponding type declarations.
+.next/types/app/panel-cajas-online-test/page.ts(5,29): error TS2307: Cannot find module '../../../../src/app/panel-cajas-online-test/page.js' or its corresponding type declarations.
+.next/types/validator.ts(89,39): error TS2307: Cannot find module '../../src/app/panel-cajas-online-test/page.js' or its corresponding type declarations.
+.next/types/validator.ts(225,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/caja/ticket/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/caja/ticket/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(_req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ message: string; }> | NextResponse<{ _id: string | undefined; ticketNumber: string; patente: string; categoria: Categoria; ... 21 more ...; updatedAt: any; }> | NextResponse<...>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(297,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/estadias/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<Record<string, unknown>> | NextResponse<{ error: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(332,39): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/excedentes/route.ts' is not a module.
+.next/types/validator.ts(341,39): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias/extensiones/route.ts' is not a module.
+.next/types/validator.ts(378,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/estadias2/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<any>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(387,31): error TS2559: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/estadias2/activas/route")' has no properties in common with type 'RouteHandlerConfig<"/api/estadias2/activas">'.
+.next/types/validator.ts(468,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/parking/novedades/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/parking/novedades/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<any>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(486,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/parking/reservations/[id]/delete/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/parking/reservations/[id]/delete">'.
+  Types of property 'DELETE' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ message: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(495,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/parking/reservations/[id]/update/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/parking/reservations/[id]/update">'.
+  Types of property 'PUT' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ reservation: any; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(558,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/plazas/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/plazas/[id]">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, context: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<SubPlaza>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters 'context' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(567,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/plazas/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/plazas">'.
+  Types of property 'PATCH' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; sub?: string | undefined; }; }) => Promise<NextResponse<any>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{}>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{}>; }' is not assignable to type '{ params: { id: string; sub?: string | undefined; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{}>' but required in type '{ id: string; sub?: string | undefined; }'.
+.next/types/validator.ts(630,31): error TS2344: Type 'typeof import("/root/.openclaw/workspace-bitron/eparking/src/app/api/tarifas/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/tarifas/[id]">'.
+  Types of property 'DELETE' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ success: boolean; }> | NextResponse<{ error: any; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(971,39): error TS2307: Cannot find module '../../src/app/api/v2/facturacion/estado-abonado/route.js' or its corresponding type declarations.
+.next/types/validator.ts(980,39): error TS2307: Cannot find module '../../src/app/api/v2/facturacion/pagar/route.js' or its corresponding type declarations.
+src/app/abonados/dashboard/page.tsx(15,7): error TS2322: Type '{ initialSubscriptions: never[]; users: User[]; parkings: ParkingLotContext[]; onSave: (sub: any) => void; onDelete: (id: any) => void; }' is not assignable to type 'IntrinsicAttributes & { userId?: string | undefined; }'.
+  Property 'initialSubscriptions' does not exist on type 'IntrinsicAttributes & { userId?: string | undefined; }'.
+src/app/abonados/dashboard/page.tsx(18,16): error TS7006: Parameter 'sub' implicitly has an 'any' type.
+src/app/abonados/dashboard/page.tsx(21,18): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/api/caja/turno/eventos/route.ts(47,60): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/caja/turno/eventos/route.ts(61,64): error TS2551: Property 'cantidadDays' does not exist on type 'FlattenMaps<ITicket> & Required<{ _id: ObjectId; }> & { __v: number; }'. Did you mean 'cantidadDias'?
+src/app/api/estadias/route.ts(198,54): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'number | undefined'.
+src/app/api/estadias/visualizacion/route.ts(22,29): error TS2339: Property 'cantidad' does not exist on type '{ total: number; detalle: string; cantidadHoras?: number | undefined; cantidadDias?: number | undefined; cantidadMeses?: number | undefined; }'.
+src/app/api/health/_helpers.ts(27,65): error TS2339: Property 'message' does not exist on type '{}'.
+src/app/api/parking/create/route.ts(92,33): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/api/parking/create/route.ts(93,36): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/api/parking/reservations/[id]/delete/route.ts(31,37): error TS2551: Property 'ownerId' does not exist on type 'Document<unknown, {}, IParkingLot, {}, {}> & IParkingLot & Required<{ _id: ObjectId; }> & { __v: number; }'. Did you mean 'owner'?
+src/app/api/parking/tarifas/route.ts(4,18): error TS2305: Module '"@/models/Tarifa"' has no exported member 'TarifaHora'.
+src/app/api/parking/tarifas/route.ts(4,30): error TS2724: '"@/models/Tarifa"' has no exported member named 'TarifaDia'. Did you mean 'Tarifa'?
+src/app/api/parking/tarifas/route.ts(4,41): error TS2305: Module '"@/models/Tarifa"' has no exported member 'TarifaMensual'.
+src/app/api/parking/tarifas/route.ts(4,56): error TS2305: Module '"@/models/Tarifa"' has no exported member 'TarifaLibre'.
+src/app/api/shifts/open/route.ts(9,50): error TS2345: Argument of type 'Request' is not assignable to parameter of type 'NextRequest'.
+  Type 'Request' is missing the following properties from type 'NextRequest': cookies, nextUrl, page, ua
+src/app/api/shifts/route.ts(9,50): error TS2345: Argument of type 'Request' is not assignable to parameter of type 'NextRequest'.
+  Type 'Request' is missing the following properties from type 'NextRequest': cookies, nextUrl, page, ua
+src/app/api/tickets/route.ts(10,50): error TS2345: Argument of type 'Request' is not assignable to parameter of type 'NextRequest'.
+  Type 'Request' is missing the following properties from type 'NextRequest': cookies, nextUrl, page, ua
+src/app/api/v2/abonados/facturar-operador/route.ts(42,19): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/abonados/facturar-operador/route.ts(42,81): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/abonados/facturar-operador/route.ts(46,28): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/abonados/route.ts(145,7): error TS2322: Type 'string' is not assignable to type 'BillingFrequency | undefined'.
+src/app/api/v2/billing/test/charge/route.ts(35,22): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(29,67): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(35,26): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(36,32): error TS2339: Property 'clientId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'clientId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(37,23): error TS2339: Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(38,23): error TS2339: Property 'nombre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'nombre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(39,25): error TS2339: Property 'apellido' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'apellido' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(40,20): error TS2339: Property 'dni' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'dni' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(41,25): error TS2339: Property 'telefono' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'telefono' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(42,23): error TS2339: Property 'ciudad' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'ciudad' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(43,26): error TS2339: Property 'domicilio' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'domicilio' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(44,22): error TS2339: Property 'email' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'email' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(45,40): error TS2339: Property 'vehiculos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'vehiculos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(45,61): error TS2339: Property 'vehiculos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'vehiculos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(46,38): error TS2339: Property 'accesos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'accesos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(46,57): error TS2339: Property 'accesos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'accesos' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(47,30): error TS2339: Property 'observaciones' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'observaciones' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(48,26): error TS2339: Property 'fechaAlta' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaAlta' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(49,33): error TS2339: Property 'fechaVencimiento' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaVencimiento' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(50,28): error TS2339: Property 'billingMode' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'billingMode' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(51,25): error TS2339: Property 'tarifaId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'tarifaId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(52,29): error TS2339: Property 'tarifaNombre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'tarifaNombre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(53,35): error TS2339: Property 'importeBase' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'importeBase' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(55,17): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(55,51): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(57,36): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/abonado/route.ts(58,37): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(30,23): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(31,19): error TS2339: Property 'email' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'email' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(32,18): error TS2339: Property 'role' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'role' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(33,18): error TS2339: Property 'name' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'name' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(34,20): error TS2339: Property 'nombre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'nombre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(35,22): error TS2339: Property 'apellido' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'apellido' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(36,17): error TS2339: Property 'dni' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'dni' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(37,22): error TS2339: Property 'telefono' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'telefono' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(38,20): error TS2339: Property 'ciudad' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'ciudad' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(39,23): error TS2339: Property 'domicilio' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'domicilio' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(40,29): error TS2339: Property 'patenteVehiculo' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'patenteVehiculo' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(41,28): error TS2339: Property 'modeloVehiculo' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'modeloVehiculo' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(42,31): error TS2339: Property 'categoriaVehiculo' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'categoriaVehiculo' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(44,14): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(44,45): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(46,33): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/client/me/route.ts(47,34): error TS2339: Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'assignedParking' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno-reportes/[id]/route.ts(23,41): error TS2339: Property 'html' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'html' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno-reportes/[id]/route.ts(27,79): error TS2339: Property 'turnoId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'turnoId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno-reportes/backfill/route.ts(37,19): error TS2339: Property 'user' does not exist on type '{ authorized: false; status: number; error: string; session?: undefined; } | { authorized: true; session: Session; status?: undefined; error?: undefined; }'.
+  Property 'user' does not exist on type '{ authorized: false; status: number; error: string; session?: undefined; }'.
+src/app/api/v2/turno-reportes/backfill/route.ts(38,107): error TS2339: Property 'user' does not exist on type '{ authorized: false; status: number; error: string; session?: undefined; } | { authorized: true; session: Session; status?: undefined; error?: undefined; }'.
+  Property 'user' does not exist on type '{ authorized: false; status: number; error: string; session?: undefined; }'.
+src/app/api/v2/turno/[id]/reporte/route.ts(55,56): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(56,28): error TS2339: Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(57,35): error TS2339: Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(68,22): error TS2339: Property 'operatorName' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'operatorName' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(68,44): error TS2339: Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(102,31): error TS2339: Property 'liquidacion' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'liquidacion' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(137,21): error TS2339: Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(137,58): error TS2339: Property 'fechaCierre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaCierre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(143,46): error TS2339: Property 'codigoTurno' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'codigoTurno' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(143,67): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(163,64): error TS2339: Property 'numeroCaja' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'numeroCaja' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(164,66): error TS2339: Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(165,72): error TS2339: Property 'codigoTurno' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'codigoTurno' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(165,93): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(166,66): error TS2339: Property 'fechaApertura' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaApertura' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(169,70): error TS2339: Property 'fechaCierre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaCierre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(225,31): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(227,31): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(229,34): error TS2339: Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'operatorId' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(231,34): error TS2339: Property 'numeroCaja' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'numeroCaja' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(232,30): error TS2339: Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'estado' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(233,35): error TS2339: Property 'codigoTurno' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'codigoTurno' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(234,30): error TS2339: Property 'fechaApertura' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaApertura' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(237,28): error TS2339: Property 'fechaCierre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property 'fechaCierre' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/api/v2/turno/[id]/reporte/route.ts(247,80): error TS2339: Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[] | (FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })'.
+  Property '_id' does not exist on type '(FlattenMaps<any> & Required<{ _id: unknown; }> & { __v: number; })[]'.
+src/app/components/AdminPanel/AdminParking/Novedades/NovedadesPanel.tsx(28,9): error TS2322: Type '{ _id: string; name: string | undefined; assignedParkingId: any; }[]' is not assignable to type 'Operador[]'.
+  Type '{ _id: string; name: string | undefined; assignedParkingId: any; }' is not assignable to type 'Operador'.
+    Types of property 'name' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/app/components/AdminPanel/AdminParking/Novedades/NovedadesPanel.tsx(33,45): error TS2339: Property '_id' does not exist on type 'string | ParkingRef'.
+  Property '_id' does not exist on type 'string'.
+src/app/components/AdminPanel/AdminReservations/ReservationCreateForm.tsx(17,59): error TS2554: Expected 0 arguments, but got 1.
+src/app/components/AdminPanel/OpenTurnoWidget.tsx(20,194): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<number | "">'.
+src/app/components/AdminPanel/OpenTurnoWidget.tsx(32,23): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<number | "">'.
+src/app/components/AdminPanel/OpenTurnoWidget.tsx(47,99): error TS2353: Object literal may only specify known properties, and 'turnoNumero' does not exist in type 'CajaState'.
+src/app/components/AdminPanel/OpenTurnoWidget.tsx(66,164): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<number | "">'.
+src/app/components/AdminPanel/PanelPlayas.tsx(65,16): error TS2739: Type '{}' is missing the following properties from type 'NovedadesPanelProps': currentUserId, currentUserName, role
+src/app/components/AdminPanel/Tarifas/AdminTarifas/TablaTarifasMensuales.tsx(3,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/AdminPanel/Tarifas/TarifasAdminPage.tsx(6,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/AdminPanel/Tarifas/TarifasList.tsx(4,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/AdminPanel/Tarifas/TarifasList.tsx(29,36): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/app/components/AdminPanel/Tarifas/TarifasList.tsx(30,38): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/app/components/AdminPanel/Tarifas/TarifasList.tsx(31,38): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/components/AdminPanel/Tarifas/TarifasList.tsx(32,36): error TS7006: Parameter 'l' implicitly has an 'any' type.
+src/app/components/AdminPanelV2/AdminParking/Novedades/NovedadesPanel.tsx(28,9): error TS2322: Type '{ _id: string; name: string | undefined; assignedParkingId: any; }[]' is not assignable to type 'Operador[]'.
+  Type '{ _id: string; name: string | undefined; assignedParkingId: any; }' is not assignable to type 'Operador'.
+    Types of property 'name' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/app/components/AdminPanelV2/AdminParking/Novedades/NovedadesPanel.tsx(33,45): error TS2339: Property '_id' does not exist on type 'string | ParkingRef'.
+  Property '_id' does not exist on type 'string'.
+src/app/components/AdminPanelV2/AdminReservations/ReservationCreateForm.tsx(17,59): error TS2554: Expected 0 arguments, but got 1.
+src/app/components/AdminPanelV2/PanelCajasOnline.tsx(98,16): error TS2345: Argument of type 'unknown[]' is not assignable to parameter of type 'SetStateAction<CajaOnlineItem[]>'.
+  Type 'unknown[]' is not assignable to type 'CajaOnlineItem[]'.
+    Type 'unknown' is not assignable to type 'CajaOnlineItem'.
+src/app/components/AdminPanelV2/PanelPlayas.tsx(65,16): error TS2739: Type '{}' is missing the following properties from type 'NovedadesPanelProps': currentUserId, currentUserName, role
+src/app/components/AdminPanelV2/Tarifas/AdminTarifas/TablaTarifasMensuales.tsx(3,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/AdminPanelV2/Tarifas/TarifasAdminPage.tsx(6,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/AdminPanelV2/Tarifas/TarifasList.tsx(4,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/AdminPanelV2/Tarifas/TarifasList.tsx(29,36): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/app/components/AdminPanelV2/Tarifas/TarifasList.tsx(30,38): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/app/components/AdminPanelV2/Tarifas/TarifasList.tsx(31,38): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/components/AdminPanelV2/Tarifas/TarifasList.tsx(32,36): error TS7006: Parameter 'l' implicitly has an 'any' type.
+src/app/components/HomePage.tsx(48,87): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ParkingListProps, context?: any): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | ... 4 more ... | undefined', gave the following error.
+    Property 'userRole' is missing in type '{}' but required in type 'ParkingListProps'.
+  Overload 2 of 2, '(props: ParkingListProps): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | ... 4 more ... | undefined', gave the following error.
+    Property 'userRole' is missing in type '{}' but required in type 'ParkingListProps'.
+src/app/components/HomePage.tsx(52,109): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: OperatorDashboardProps, context?: any): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | ... 4 more ... | undefined', gave the following error.
+    Property 'currentUserId' is missing in type '{}' but required in type 'OperatorDashboardProps'.
+  Overload 2 of 2, '(props: OperatorDashboardProps): string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | ... 4 more ... | undefined', gave the following error.
+    Property 'currentUserId' is missing in type '{}' but required in type 'OperatorDashboardProps'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/AltaServicio.tsx(5,31): error TS2614: Module '"./SubscriptionsForm/SubscriptionManager"' has no exported member 'ISubscription'. Did you mean to use 'import ISubscription from "./SubscriptionsForm/SubscriptionManager"' instead?
+src/app/components/Parking/Abonados/AbonadosForm/blocks/AltaServicio.tsx(5,46): error TS2614: Module '"./SubscriptionsForm/SubscriptionManager"' has no exported member 'User'. Did you mean to use 'import User from "./SubscriptionsForm/SubscriptionManager"' instead?
+src/app/components/Parking/Abonados/AbonadosForm/blocks/AltaServicio.tsx(5,52): error TS2614: Module '"./SubscriptionsForm/SubscriptionManager"' has no exported member 'Parking'. Did you mean to use 'import Parking from "./SubscriptionsForm/SubscriptionManager"' instead?
+src/app/components/Parking/Abonados/AbonadosForm/blocks/AltaServicio.tsx(43,9): error TS2322: Type '{ initialSubscriptions: ISubscription[]; users: any[]; parkings: Parking[]; onSave: (subscription: ISubscription) => void; onDelete: (id: string) => void; }' is not assignable to type 'IntrinsicAttributes & { userId?: string | undefined; }'.
+  Property 'initialSubscriptions' does not exist on type 'IntrinsicAttributes & { userId?: string | undefined; }'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(30,12): error TS2367: This comparison appears to be unintentional because the types '"hora" | "dia" | "libre" | "mensual"' and '"mes"' have no overlap.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(30,41): error TS2339: Property 'category' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(36,41): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(46,43): error TS2339: Property 'cantidad' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(47,33): error TS2339: Property 'precioUnitario' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(49,31): error TS2339: Property 'precioUnitario' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(100,27): error TS2677: A type predicate's type must be assignable to its parameter's type.
+  Type 'TarifaMensual & { _id: string; category: Categoria; }' is not assignable to type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(101,21): error TS2339: Property 'tipoEstadia' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(104,32): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(104,46): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(105,26): error TS2339: Property 'precioUnitario' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/PaymentForm.tsx(105,48): error TS2339: Property 'cantidad' does not exist on type 'never'.
+src/app/components/Parking/Abonados/AbonadosForm/blocks/SubscriptionsForm/SubscriptionManager.tsx(83,9): error TS2322: Type '{ _id: string; category: Categoria; tipoEstadia: "mes"; cantidad: number; precioUnitario: number; bonificacionPorc?: number | undefined; precioConDescuento?: number | undefined; precioTotal: number; }[]' is not assignable to type 'SubTarifa[]'.
+  Type '{ _id: string; category: Categoria; tipoEstadia: "mes"; cantidad: number; precioUnitario: number; bonificacionPorc?: number; precioConDescuento?: number; precioTotal: number; }' is not assignable to type 'SubTarifa'.
+    Type '{ _id: string; category: Categoria; tipoEstadia: "mes"; cantidad: number; precioUnitario: number; bonificacionPorc?: number; precioConDescuento?: number; precioTotal: number; }' is not assignable to type 'TarifaMensual & SubTarifaBase'.
+      Type '{ _id: string; category: Categoria; tipoEstadia: "mes"; cantidad: number; precioUnitario: number; bonificacionPorc?: number; precioConDescuento?: number; precioTotal: number; }' is not assignable to type 'TarifaMensual'.
+        Types of property 'tipoEstadia' are incompatible.
+          Type '"mes"' is not assignable to type '"mensual"'.
+src/app/components/Parking/Caja/CajaDashboardV2.tsx(316,11): error TS2322: Type 'TurnoData | null' is not assignable to type 'TurnoCaja | null'.
+  Type 'TurnoData' is not assignable to type 'TurnoCaja'.
+    Types of property 'numeroTurno' are incompatible.
+      Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+        Type 'null' is not assignable to type 'number | undefined'.
+src/app/components/Parking/Caja/CajaLiquidacionPendienteV2.tsx(71,85): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'TurnoCaja'.
+src/app/components/Parking/Caja/CajaPendientesDrawerV2.tsx(70,97): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'TurnoCaja'.
+src/app/components/Parking/Caja/helpers/cajaHelpers.ts(1,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/Parking/Estadias/ConfigurarEstadias.tsx(6,10): error TS2305: Module '"@/interfaces/Estadias/ticket"' has no exported member 'TicketData'.
+src/app/components/Parking/Estadias/EditTicket.tsx(11,15): error TS2305: Module '"@/interfaces/Estadias/ticket"' has no exported member 'TicketData'.
+src/app/components/Parking/Estadias/EditTicket.tsx(144,7): error TS2561: Object literal may only specify known properties, but 'operatorId' does not exist in type 'TicketCaja'. Did you mean to write 'operadorId'?
+src/app/components/Parking/Estadias/Formularios/FormCobro.tsx(92,14): error TS2678: Type '"mes"' is not comparable to type '"hora" | "dia" | "mensual"'.
+src/app/components/Parking/Estadias/Formularios/FormCobro.tsx(157,12): error TS2678: Type '"mes"' is not comparable to type '"hora" | "dia" | "libre" | "mensual"'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(4,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(4,37): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Categoria'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(41,18): error TS18047: 'data' is possibly 'null'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(42,20): error TS18047: 'data' is possibly 'null'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(43,19): error TS18047: 'data' is possibly 'null'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(44,22): error TS18047: 'data' is possibly 'null'.
+src/app/components/Parking/Estadias/IngresoTest.tsx(45,22): error TS18047: 'data' is possibly 'null'.
+src/app/components/Parking/Estadias/Tickets/TicketCobro.tsx(37,7): error TS2322: Type '"hora" | "dia" | "libre" | "mensual"' is not assignable to type '"hora" | "dia" | "libre" | "mes" | undefined'.
+  Type '"mensual"' is not assignable to type '"hora" | "dia" | "libre" | "mes" | undefined'.
+src/app/components/Parking/Estadias/TurnoPanel.tsx(36,28): error TS2554: Expected 0 arguments, but got 1.
+src/app/components/Parking/Tarifas/ParkingList.tsx(24,30): error TS2538: Type 'undefined' cannot be used as an index type.
+src/app/components/Parking/Tarifas/ParkingList.tsx(24,57): error TS18048: 'p.availableSpots' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(55,51): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(55,78): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(71,44): error TS2538: Type 'undefined' cannot be used as an index type.
+src/app/components/Parking/Tarifas/ParkingList.tsx(76,63): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(90,60): error TS18048: 'p.location' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(90,78): error TS18048: 'p.location' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(94,36): error TS18048: 'p.location' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(101,70): error TS18048: 'p.pricePerHour' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(102,73): error TS18048: 'p.schedule' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(102,94): error TS18048: 'p.schedule' is possibly 'undefined'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(107,69): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(107,86): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(113,64): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(124,50): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'SetStateAction<string | null>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<string | null>'.
+src/app/components/Parking/Tarifas/ParkingList.tsx(145,15): error TS2322: Type 'ParkingDto' is not assignable to type 'Parking'.
+  Types of property '_id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/app/components/Parking/Tarifas/ParkingSelector.tsx(4,25): error TS2307: Cannot find module './types' or its corresponding type declarations.
+src/app/components/Parking/Tarifas/TarifasParkingCard.tsx(7,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/Parking/Tarifas/TarifasTableCard.tsx(5,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/components/Parking/Tarifas/TarifasTableCard.tsx(7,21): error TS2307: Cannot find module '@/app/components/Tooltip' or its corresponding type declarations.
+src/app/components/Parking/Tarifas/TarifasTableCard.tsx(86,51): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/app/components/Parking/Tarifas/TarifasTableCard.tsx(100,49): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/app/components/Reservations/ReservationCard.tsx(36,56): error TS2339: Property 'name' does not exist on type 'ParkingLotType'.
+  Property 'name' does not exist on type 'string'.
+src/app/components/Reservations/ReservationCard.tsx(56,22): error TS2339: Property 'processedBy' does not exist on type 'ReservationExtended'.
+src/app/components/Reservations/ReservationCard.tsx(56,87): error TS2339: Property 'processedBy' does not exist on type 'ReservationExtended'.
+src/app/components/Reservations/ReservationModal.tsx(25,58): error TS2339: Property 'processedBy' does not exist on type 'ReservationExtended'.
+src/app/components/Reservations/ReservationModal.tsx(26,54): error TS2339: Property 'processedBy' does not exist on type 'ReservationExtended'.
+src/app/components/Reservations/ReservationModal.tsx(66,26): error TS2339: Property 'processedBy' does not exist on type 'ReservationExtended'.
+src/app/components/UserPanel/AccountStatus.tsx(80,135): error TS2339: Property 'assignedParking' does not exist on type '{ estado?: string | undefined; financialStatus?: "moroso" | "con_deuda" | "al_dia" | undefined; hasDebt?: boolean | undefined; hasOverdueDebt?: boolean | undefined; fechaAlta?: string | null | undefined; fechaVencimiento?: string | ... 1 more ... | undefined; tarifaNombre?: string | undefined; importeBase?: number |...'.
+src/app/components/Users/Register/UserRegisterForm.tsx(55,205): error TS2322: Type 'string' is not assignable to type '"client" | "owner" | "admin" | "guest"'.
+src/app/components/Users/Register/UserRegisterForm.tsx(72,256): error TS2322: Type '{ children: Element; show: boolean; enter: string; enterFrom: string; enterTo: string; leave: string; leaveFrom: string; leaveTo: string; className: string; }' is not assignable to type 'IntrinsicAttributes & CleanProps<ExoticComponent<{ children?: ReactNode; }>, "static" | "unmount" | keyof TransitionClasses | keyof TransitionEvents | "transition" | "appear"> & ... 6 more ... & { ...; }'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & CleanProps<ExoticComponent<{ children?: ReactNode; }>, "static" | "unmount" | keyof TransitionClasses | keyof TransitionEvents | "transition" | "appear"> & ... 6 more ... & { ...; }'.
+src/app/components/Users/UserList.tsx(96,91): error TS2339: Property '_id' does not exist on type 'never'.
+src/app/components/Users/UserList.tsx(137,103): error TS18048: 'user.assignedParking' is possibly 'undefined'.
+src/app/components/Users/UserList.tsx(144,15): error TS2322: Type 'import("/root/.openclaw/workspace-bitron/eparking/src/interfaces/user").User' is not assignable to type 'User'.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/app/hooks/Parking/Caja/useCheckin.ts(42,45): error TS2345: Argument of type '{ operatorId: string; patente: string; categoria: "Automóvil" | "Motocicleta" | "Camioneta" | "Otros"; tarifaId: string; tipoEstadia: "hora" | "dia" | "libre"; cantidad: number; prepago: false; }' is not assignable to parameter of type 'IngresoPayload & { operatorId: string; horaEntrada: string; }'.
+  Property 'horaEntrada' is missing in type '{ operatorId: string; patente: string; categoria: "Automóvil" | "Motocicleta" | "Camioneta" | "Otros"; tarifaId: string; tipoEstadia: "hora" | "dia" | "libre"; cantidad: number; prepago: false; }' but required in type '{ operatorId: string; horaEntrada: string; }'.
+src/app/hooks/Parking/Caja/useCheckin.ts(56,9): error TS2322: Type '"Automóvil" | "Motocicleta" | "Camioneta" | "Otros" | "Bicicleta"' is not assignable to type '"Automóvil" | "Motocicleta" | "Camioneta" | "Otros"'.
+  Type '"Bicicleta"' is not assignable to type '"Automóvil" | "Motocicleta" | "Camioneta" | "Otros"'.
+src/app/hooks/Parking/useParkingsConTarifas.ts(5,15): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/app/hooks/Parking/useTarifas.ts(3,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/interfaces/parking.ts(1,10): error TS2305: Module '"./tarifa"' has no exported member 'Tarifa'.
+src/interfaces/reservations.ts(3,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Categoria'.
+src/interfaces/tarifaCompleta.ts(2,15): error TS2305: Module '"./tarifa"' has no exported member 'Tarifa'.
+src/interfaces/tarifaCompleta.ts(2,23): error TS2724: '"./tarifa"' has no exported member named 'TarifaDia'. Did you mean 'SubTarifaDia'?
+src/interfaces/tarifaCompleta.ts(2,34): error TS2305: Module '"./tarifa"' has no exported member 'Categoria'.
+src/interfaces/tarifaCompleta.ts(2,45): error TS2305: Module '"./tarifa"' has no exported member 'TipoEstadia'.
+src/lib/calculos/estadia.ts(2,10): error TS2724: '"@/models/Tarifa"' has no exported member named 'ITarifa'. Did you mean 'Tarifa'?
+src/lib/debugLogger.ts(1,30): error TS7016: Could not find a declaration file for module 'uuid'. '/root/.openclaw/workspace-bitron/eparking/node_modules/uuid/dist/esm-browser/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/lib/tarifaActions.ts(3,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.
+src/models/Abono.ts(70,5): error TS7006: Parameter 'sp' implicitly has an 'any' type.
+src/models/Counter.ts(3,18): error TS2430: Interface 'ICounter' incorrectly extends interface 'Document<ObjectId, any, any, Record<string, any>, {}>'.
+  Types of property '_id' are incompatible.
+    Type 'string' is not assignable to type 'ObjectId'.
+src/modules/auditoria-cajas/AuditoriaCajasSubtab.tsx(7,49): error TS2503: Cannot find namespace 'JSX'.
+src/modules/auditoria-cajas/__tests__/TopSummary.test.tsx(2,32): error TS2307: Cannot find module '@testing-library/react' or its corresponding type declarations.
+src/modules/auditoria-cajas/__tests__/TopSummary.test.tsx(7,39): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<any>'.
+src/modules/auth/hooks/useCurrentUser.ts(1,10): error TS2305: Module '"@/app/hooks/Users/useCurrentUser"' has no exported member 'default'.
+src/modules/auth/hooks/useRegisterUser.ts(1,10): error TS2305: Module '"@/app/hooks/Users/useRegisterUser"' has no exported member 'default'.
+src/modules/caja/caja-removed-20260412T162720Z/components/IngresoEstadiaV2.tsx(92,29): error TS2339: Property 'cantidad' does not exist on type 'SubTarifa'.
+  Property 'cantidad' does not exist on type 'TarifaLibre & SubTarifaBase'.
+src/modules/caja/caja-removed-20260412T162720Z/components/SalidaEstadiaV2.tsx(328,15): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/caja/caja-removed-20260412T162720Z/components/SalidaEstadiaV2.tsx(330,15): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(131,7): error TS2353: Object literal may only specify known properties, and 'tipoEstadiaAplicada' does not exist in type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(151,7): error TS2353: Object literal may only specify known properties, and 'tipoEstadiaAplicada' does not exist in type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(165,7): error TS2353: Object literal may only specify known properties, and 'tipoEstadiaAplicada' does not exist in type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(172,44): error TS2339: Property 'cantidadAplicada' does not exist on type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(176,30): error TS2339: Property 'precioTotalAplicado' does not exist on type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(182,5): error TS2322: Type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; } | undefined' is not assignable to type 'TarifaSnapshotLike | undefined'.
+  Type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }' has no properties in common with type 'TarifaSnapshotLike'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(479,23): error TS2339: Property 'cantidad' does not exist on type 'Partial<{ patente: string; categoria: "Automóvil" | "Motocicleta" | "Camioneta" | "Otros" | "Bicicleta"; tipoEstadia: "hora" | "dia" | "libre"; metodoPago: "efectivo" | "tarjeta" | "qr" | "otros"; ... 7 more ...; prepago: boolean; }>'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(480,28): error TS2339: Property 'cantidadHoras' does not exist on type 'Partial<{ patente: string; categoria: "Automóvil" | "Motocicleta" | "Camioneta" | "Otros" | "Bicicleta"; tipoEstadia: "hora" | "dia" | "libre"; metodoPago: "efectivo" | "tarjeta" | "qr" | "otros"; ... 7 more ...; prepago: boolean; }>'.
+src/modules/caja/caja-removed-20260412T162720Z/server/caja.logic.ts(481,27): error TS2339: Property 'cantidadDias' does not exist on type 'Partial<{ patente: string; categoria: "Automóvil" | "Motocicleta" | "Camioneta" | "Otros" | "Bicicleta"; tipoEstadia: "hora" | "dia" | "libre"; metodoPago: "efectivo" | "tarjeta" | "qr" | "otros"; ... 7 more ...; prepago: boolean; }>'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(26,34): error TS2339: Property '_id' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(27,31): error TS2339: Property 'nombre' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(28,35): error TS2339: Property 'tarifaHora' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(29,34): error TS2339: Property 'tarifaDia' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(30,36): error TS2339: Property 'tarifaLibre' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(31,39): error TS2339: Property 'tarifaBaseHora' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(32,40): error TS2339: Property 'fraccionMinutos' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(98,46): error TS2339: Property 'efectivo' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(99,45): error TS2339: Property 'tarjeta' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(100,43): error TS2339: Property 'otros' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(101,52): error TS2339: Property 'totalDeclarado' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(103,31): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(104,35): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.backup.20260407_102746.ts(105,51): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(26,34): error TS2339: Property '_id' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(27,31): error TS2339: Property 'nombre' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(28,35): error TS2339: Property 'tarifaHora' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(29,34): error TS2339: Property 'tarifaDia' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(30,36): error TS2339: Property 'tarifaLibre' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(31,39): error TS2339: Property 'tarifaBaseHora' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(32,40): error TS2339: Property 'fraccionMinutos' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(33,44): error TS2339: Property 'tipoEstadiaAplicada' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(34,41): error TS2339: Property 'cantidadAplicada' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(35,47): error TS2339: Property 'precioUnitarioAplicado' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(36,44): error TS2339: Property 'precioTotalAplicado' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(122,33): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(123,15): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(124,17): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(125,33): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(137,46): error TS2339: Property 'efectivo' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(138,45): error TS2339: Property 'tarjeta' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(139,43): error TS2339: Property 'otros' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(140,52): error TS2339: Property 'totalDeclarado' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(141,50): error TS2339: Property 'totalSistema' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(142,48): error TS2339: Property 'diferencia' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(143,45): error TS2339: Property 'tipoDiferencia' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(144,42): error TS2339: Property 'observacion' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(146,31): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(147,35): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/caja-removed-20260412T162720Z/server/serializers.ts(148,51): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/components/IngresoEstadiaV2.tsx(92,29): error TS2339: Property 'cantidad' does not exist on type 'SubTarifa'.
+  Property 'cantidad' does not exist on type 'TarifaLibre & SubTarifaBase'.
+src/modules/caja/components/SalidaEstadiaV2.tsx(328,15): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/caja/components/SalidaEstadiaV2.tsx(330,15): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/caja/server/caja.logic.ts(131,7): error TS2353: Object literal may only specify known properties, and 'tipoEstadiaAplicada' does not exist in type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/server/caja.logic.ts(151,7): error TS2353: Object literal may only specify known properties, and 'tipoEstadiaAplicada' does not exist in type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/server/caja.logic.ts(165,7): error TS2353: Object literal may only specify known properties, and 'tipoEstadiaAplicada' does not exist in type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/server/caja.logic.ts(172,44): error TS2339: Property 'cantidadAplicada' does not exist on type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/server/caja.logic.ts(176,30): error TS2339: Property 'precioTotalAplicado' does not exist on type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }'.
+src/modules/caja/server/caja.logic.ts(182,5): error TS2322: Type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; } | undefined' is not assignable to type 'TarifaSnapshotLike | undefined'.
+  Type '{ _id?: string | undefined; nombre?: string | undefined; tarifaHora?: number | undefined; tarifaDia?: number | undefined; tarifaLibre?: number | undefined; tarifaBaseHora?: number | undefined; fraccionMinutos?: number | undefined; }' has no properties in common with type 'TarifaSnapshotLike'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(26,34): error TS2339: Property '_id' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(27,31): error TS2339: Property 'nombre' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(28,35): error TS2339: Property 'tarifaHora' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(29,34): error TS2339: Property 'tarifaDia' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(30,36): error TS2339: Property 'tarifaLibre' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(31,39): error TS2339: Property 'tarifaBaseHora' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(32,40): error TS2339: Property 'fraccionMinutos' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(98,46): error TS2339: Property 'efectivo' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(99,45): error TS2339: Property 'tarjeta' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(100,43): error TS2339: Property 'otros' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(101,52): error TS2339: Property 'totalDeclarado' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(103,31): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(104,35): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/server/serializers.backup.20260407_102746.ts(105,51): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(26,34): error TS2339: Property '_id' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(27,31): error TS2339: Property 'nombre' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(28,35): error TS2339: Property 'tarifaHora' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(29,34): error TS2339: Property 'tarifaDia' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(30,36): error TS2339: Property 'tarifaLibre' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(31,39): error TS2339: Property 'tarifaBaseHora' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(32,40): error TS2339: Property 'fraccionMinutos' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(33,44): error TS2339: Property 'tipoEstadiaAplicada' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(34,41): error TS2339: Property 'cantidadAplicada' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(35,47): error TS2339: Property 'precioUnitarioAplicado' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(36,44): error TS2339: Property 'precioTotalAplicado' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(122,33): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/server/serializers.ts(123,15): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/server/serializers.ts(124,17): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/server/serializers.ts(125,33): error TS2339: Property 'fechaCierreOperativo' does not exist on type 'ITurno | (PlainObject & { _id?: unknown; })'.
+  Property 'fechaCierreOperativo' does not exist on type 'ITurno'.
+src/modules/caja/server/serializers.ts(137,46): error TS2339: Property 'efectivo' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(138,45): error TS2339: Property 'tarjeta' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(139,43): error TS2339: Property 'otros' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(140,52): error TS2339: Property 'totalDeclarado' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(141,50): error TS2339: Property 'totalSistema' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(142,48): error TS2339: Property 'diferencia' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(143,45): error TS2339: Property 'tipoDiferencia' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(144,42): error TS2339: Property 'observacion' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(146,31): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(147,35): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/caja/server/serializers.ts(148,51): error TS2339: Property 'fechaLiquidacion' does not exist on type '{}'.
+src/modules/parking-sessions/hooks/useEstadiasEnTiempoReal.ts(44,13): error TS2367: This comparison appears to be unintentional because the types '"hora" | "dia" | "libre" | "mensual"' and '"mes"' have no overlap.
+src/modules/parking/components/ParkingCreatePage.tsx(6,31): error TS2339: Property 'success' does not exist on type '{ form: ParkingCreateForm; loading: boolean; error: string | null; response: CreateParkingResponse | null; updateField: (field: string, value: any) => void; submit: () => Promise<...>; }'.
+src/modules/parking/hooks/useCreateOrUpdateTarifa.ts(1,52): error TS2306: File '/root/.openclaw/workspace-bitron/eparking/src/app/hooks/Parking/useCreateOrUpdateTarifa.ts' is not a module.
+src/modules/parking/hooks/useMensajes.ts(1,10): error TS2305: Module '"@/app/hooks/Parking/useMensajes"' has no exported member 'default'.
+src/modules/parking/hooks/useNovedades.ts(1,10): error TS2305: Module '"@/app/hooks/Parking/useNovedades"' has no exported member 'default'.
+src/modules/parking/hooks/useNovedadesFiltradas.ts(1,10): error TS2305: Module '"@/app/hooks/Parking/useNovedadesFiltradas"' has no exported member 'default'.
+src/modules/parking/hooks/useParkingLots.ts(10,7): error TS2322: Type '{ _id: string; owner: string; name: string; location: { lat: number; lng: number; address: string; }; totalSpots: number; availableSpots: number; pricePerHour: number; schedule: { open: string; close: string; }; isAvailable: boolean; }[]' is not assignable to type 'ParkingLotContext[]'.
+  Type '{ _id: string; owner: string; name: string; location: { lat: number; lng: number; address: string; }; totalSpots: number; availableSpots: number; pricePerHour: number; schedule: { open: string; close: string; }; isAvailable: boolean; }' is missing the following properties from type 'ParkingLotContext': createdAt, updatedAt
+src/modules/parking/hooks/useParkingsConTarifas.ts(1,10): error TS2305: Module '"@/app/hooks/Parking/useParkingsConTarifas"' has no exported member 'default'.
+src/modules/parking/hooks/useTarifas.ts(1,10): error TS2305: Module '"@/app/hooks/Parking/useTarifas"' has no exported member 'default'.
+src/modules/payments/components/PaymentCheckInPage.tsx(5,11): error TS2739: Type '{}' is missing the following properties from type 'PaymentCheckInProps': reservation, onPaymentUpdated
+src/modules/tickets/server/serializers.ts(93,24): error TS2339: Property 'createdAt' does not exist on type 'IEstadia'.
+src/modules/tickets/server/serializers.ts(94,24): error TS2339: Property 'updatedAt' does not exist on type 'IEstadia'.
+src/modules/turnos/components/TurnoPanelV2.tsx(33,9): error TS2741: Property 'observacion' is missing in type '{ efectivo: number; tarjeta: number; otros: number; }' but required in type 'LiquidacionInputs'.
+src/modules/turnos/components/TurnoPanelV2.tsx(65,57): error TS2345: Argument of type 'TurnoData | null' is not assignable to parameter of type 'TurnoCaja | null'.
+  Type 'TurnoData' is not assignable to type 'TurnoCaja'.
+    Types of property 'numeroTurno' are incompatible.
+      Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+        Type 'null' is not assignable to type 'number | undefined'.
+src/modules/turnos/turnos-removed-20260412T162720Z/components/TurnoPanelV2.tsx(33,9): error TS2741: Property 'observacion' is missing in type '{ efectivo: number; tarjeta: number; otros: number; }' but required in type 'LiquidacionInputs'.
+src/modules/turnos/turnos-removed-20260412T162720Z/components/TurnoPanelV2.tsx(65,57): error TS2345: Argument of type 'TurnoData | null' is not assignable to parameter of type 'TurnoCaja | null'.
+  Type 'TurnoData' is not assignable to type 'TurnoCaja'.
+    Types of property 'numeroTurno' are incompatible.
+      Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+        Type 'null' is not assignable to type 'number | undefined'.
+src/modules/turnos/turnos-removed-20260412T162720Z/components/TurnoPanelV2.tsx(150,29): error TS2345: Argument of type 'Date' is not assignable to parameter of type 'string'.
+src/modules/turnos/turnos-removed-20260412T162720Z/components/TurnoPanelV2.tsx(172,36): error TS2345: Argument of type '"abierto" | "cerrado" | "pendiente_liquidacion" | "liquidado"' is not assignable to parameter of type '"abierto" | "cerrado" | null'.
+  Type '"pendiente_liquidacion"' is not assignable to type '"abierto" | "cerrado" | null'.
+src/modules/turnos/turnos-removed-20260412T162720Z/components/TurnoPanelV2.tsx(321,50): error TS2345: Argument of type 'Date' is not assignable to parameter of type 'string'.
+src/services/cajaService.ts(7,33): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.
+src/utils/calcularTarifa.ts(4,15): error TS2339: Property 'ingreso' does not exist on type 'ITicket'.
+src/utils/calcularTarifa.ts(6,35): error TS2339: Property 'ingreso' does not exist on type 'ITicket'.
+src/utils/calcularTarifa.ts(7,25): error TS2339: Property 'salida' does not exist on type 'ITicket'.
+src/utils/calcularTarifa.ts(7,50): error TS2339: Property 'salida' does not exist on type 'ITicket'.
+src/utils/calcularTarifa.ts(12,11): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(12,25): error TS2339: Property 'tipo' does not exist on type 'ITarifaSnapshot'.
+src/utils/calcularTarifa.ts(14,41): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(14,55): error TS2339: Property 'valor' does not exist on type 'ITarifaSnapshot'.
+src/utils/calcularTarifa.ts(17,12): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(18,46): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(21,10): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(21,24): error TS2339: Property 'valor' does not exist on type 'ITarifaSnapshot'.
+src/utils/calcularTarifa.ts(21,38): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(24,48): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(24,62): error TS2339: Property 'valor' does not exist on type 'ITarifaSnapshot'.
+src/utils/calcularTarifa.ts(27,15): error TS18048: 'ticket.tarifa' is possibly 'undefined'.
+src/utils/calcularTarifa.ts(27,29): error TS2339: Property 'valor' does not exist on type 'ITarifaSnapshot'.
+src/utils/tarifaDefaults.ts(23,3): error TS2322: Type '"mes"' is not assignable to type '"mensual"'.
+src/utils/tarifaHelpers.ts(2,10): error TS2459: Module '"@/app/components/Parking/Estadias/Formularios/FormPadre"' declares 'SubTarifa' locally, but it is not exported.
+src/utils/toClientObject.ts(3,10): error TS2305: Module '"@/interfaces/tarifa"' has no exported member 'Tarifa'.

@@ -30,8 +30,9 @@ export async function checkMongoConnectionSafe() {
     // if not connected, try a ping by running a simple command (serverSelectionTimeout in lib)
     // connectToDatabase already attempts connection; if it didn't throw, treat as ok
     return { ok: true };
-  } catch (err) {
-    console.error('health.checkMongoConnectionSafe error', err?.message || err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('health.checkMongoConnectionSafe error', message);
     return { ok: false };
   }
 }

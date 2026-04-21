@@ -6,6 +6,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { emitAbonadoInvoice, accreditBillingDocument } from '@/modules/billing';
 
+type InitialChargeInput = {
+  enabled?: boolean;
+  tipoFacturacion?: string;
+  amount?: number;
+  markAsPaid?: boolean;
+  paymentReference?: string;
+  paymentMethod?: string;
+  paymentProvider?: string;
+};
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -119,31 +129,35 @@ export async function POST(req: NextRequest) {
     tarifaSnapshot: body.tarifaSnapshot ?? {},
   });
 
+  const initialCharge = (body.initialCharge && typeof body.initialCharge === 'object')
+    ? (body.initialCharge as InitialChargeInput)
+    : undefined;
+
   let initialInvoice: any = null;
 
-  if (body?.initialCharge?.enabled) {
+  if (initialCharge?.enabled) {
     initialInvoice = await emitAbonadoInvoice({
       abonadoId: String(abonado._id),
       actorRole: session.user.role === 'operator' ? 'operator' : session.user.role === 'owner' ? 'owner' : 'admin',
       actorUserId: session.user.id,
       source: 'abonado',
       operatorId: session.user.role === 'operator' ? session.user.id : null,
-      tipoFacturacion: body?.initialCharge?.tipoFacturacion ?? body?.billingMode ?? 'mensual',
-      monto: Number(body?.initialCharge?.amount ?? body?.importeBase ?? 0),
-      estado: body?.initialCharge?.markAsPaid ? 'emitida' : 'emitida',
-      paymentReference: body?.initialCharge?.paymentReference ?? undefined,
+      tipoFacturacion: initialCharge?.tipoFacturacion ?? (body.billingMode as string | undefined) ?? 'mensual',
+      monto: Number(initialCharge?.amount ?? body.importeBase ?? 0),
+      estado: initialCharge?.markAsPaid ? 'emitida' : 'emitida',
+      paymentReference: initialCharge?.paymentReference ?? undefined,
     });
 
-    if (body?.initialCharge?.markAsPaid && initialInvoice?._id) {
+    if (initialCharge?.markAsPaid && initialInvoice?._id) {
       const accreditResult = await accreditBillingDocument(
         {
           _id: initialInvoice._id,
           ...(session.user.role === 'owner' ? { ownerId: session.user.id } : {}),
         },
         {
-          paymentMethod: body?.initialCharge?.paymentMethod ?? 'efectivo',
-          paymentProvider: body?.initialCharge?.paymentProvider ?? 'manual',
-          paymentReference: body?.initialCharge?.paymentReference ?? '',
+          paymentMethod: initialCharge?.paymentMethod ?? 'efectivo',
+          paymentProvider: initialCharge?.paymentProvider ?? 'manual',
+          paymentReference: initialCharge?.paymentReference ?? '',
         },
       );
 

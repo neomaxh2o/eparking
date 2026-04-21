@@ -206,8 +206,10 @@ export default function PanelCajasOnline() {
       const data = contentType.includes('application/json') ? await res.json() : null;
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar la auditoría online');
       const rawItems = Array.isArray(data?.items) ? data.items : (Array.isArray(data?.cajas) ? data.cajas : []);
-      const normalized = rawItems.map(normalizeCajaOnlineItem);
-      const unique = Array.from(new Map(normalized.filter(Boolean).map((item) => [item._id, item])).values());
+      const normalized: CajaOnlineItem[] = rawItems.map(normalizeCajaOnlineItem);
+      const unique: CajaOnlineItem[] = Array.from(
+        new Map(normalized.map((item: CajaOnlineItem) => [item._id, item])).values(),
+      );
       setItems(unique);
     } catch (err: any) {
       setError(err.message || 'Error cargando cajas online');
