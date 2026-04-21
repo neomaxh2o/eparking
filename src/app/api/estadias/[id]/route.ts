@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongoose';
 import Estadia from '@/models/Estadia';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   await connectToDatabase();
 
-  const { id } = params;
+  const { id } = await context.params;
   if (!id) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
 
   try {
@@ -22,10 +22,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   await connectToDatabase();
 
-  const { id } = params;
+  const { id } = await context.params;
   if (!id) return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
 
   try {

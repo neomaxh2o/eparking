@@ -51,21 +51,25 @@ export async function PUT(
 // ---------------- DELETE subdocumento ----------------
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const body = await req.json();
-    const { subId, tipo } = body;
+    const { id } = await context.params;
+    const raw: unknown = await req.json().catch(() => null);
+    const body = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
+    const subId = String(body.subId ?? '');
+    const tipo = String(body.tipo ?? '');
 
-    const tarifa = await Tarifa.findById(params.id);
+    const tarifa = await Tarifa.findById(id);
     if (!tarifa) return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
 
-    tarifa[tipo] = tarifa[tipo].filter((s: any) => s._id.toString() !== subId);
+    const currentItems = Array.isArray(tarifa[tipo]) ? tarifa[tipo] : [];
+    tarifa[tipo] = currentItems.filter((s: Record<string, unknown> & { _id?: unknown }) => String(s._id) !== subId);
     await tarifa.save();
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error eliminando subdocumento' }, { status: 400 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Error eliminando subdocumento' }, { status: 400 });
   }
 }

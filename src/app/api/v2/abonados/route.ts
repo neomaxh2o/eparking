@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   if (search?.trim()) {
     const term = search.trim();
-    const regex = new RegExp(term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), 'i');
+    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
     if (searchBy === 'numeroAbonado') {
       const parsed = Number(term);

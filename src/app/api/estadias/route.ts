@@ -234,8 +234,8 @@ export async function DELETE(req: NextRequest) {
     await releaseSubplaza(deleted.plazaAsignadaId, deleted.subplazaAsignadaNumero);
 
     return NextResponse.json({ message: 'Estadía eliminada correctamente' }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[api/estadias][DELETE]', err);
-    return NextResponse.json({ error: err.message || 'Error al eliminar estadía' }, { status: 500 });
+    return NextResponse.json({ error: (err instanceof Error && err.message) ? err.message : 'Error al eliminar estadía' }, { status: 500 });
   }
 }

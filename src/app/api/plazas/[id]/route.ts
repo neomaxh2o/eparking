@@ -83,10 +83,9 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
 }
 
 // ---------------------- POST /api/plazas/:id/subplaza ----------------------
-export async function POST(req: Request, context: { params: { id: string } }) {
+export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const params = await context.params;
-    const { id } = params;
+    const { id } = await context.params;
 
     await connectToDatabase();
 
