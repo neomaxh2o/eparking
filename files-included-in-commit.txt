@@ -1,0 +1,7 @@
+Files included in the final clean commit:
+- git-cleanup-summary.md
+- git-status-before.txt
+- git-status-after.txt
+- files-included-in-commit.txt
+- files-excluded.txt
+- branch-and-push-result.md

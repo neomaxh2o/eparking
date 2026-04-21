@@ -1,0 +1,4 @@
+Excluded from final clean commit because they are validation residue / non-product noise:
+- BITRON_GITHUB_TEST.md
+- bitron_ssh_write_test.txt
+- bitron_ssh_write_test_2.txt
