@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import dbConnect from '@/lib/mongoose';
 import Abonado from '@/models/Abonado';
 import AbonadoInvoice from '@/models/AbonadoInvoice';
 import CajaMovimiento from '@/models/CajaMovimiento';
 import Turno from '@/models/Turno';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    if (!['admin', 'owner'].includes(session.user.role)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
     const body: unknown = await req.json().catch(() => null);
     const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
     const abonadoId = b.abonadoId as string | undefined;
@@ -17,10 +23,19 @@ export async function POST(req: NextRequest) {
     const idOperacion = b.idOperacion as string | undefined;
 
     if (!abonadoId) return NextResponse.json({ error: 'abonadoId es requerido' }, { status: 400 });
+    if (!turnoId) return NextResponse.json({ error: 'turnoId es requerido para registrar el pago en caja.' }, { status: 400 });
     const amountNum = Number(monto);
     if (!monto || Number.isNaN(amountNum) || amountNum <= 0) return NextResponse.json({ error: 'monto inválido' }, { status: 400 });
 
     await dbConnect();
+
+    const turno = await Turno.findOne({
+      _id: turnoId,
+      operatorId: session.user.id,
+      estado: 'abierto',
+      esCajaAdministrativa: true,
+    }).lean();
+    if (!turno) return NextResponse.json({ error: 'Debes operar con una caja/turno administrativo abierto propio.' }, { status: 409 });
 
     // validate abonado
     const abonado = await Abonado.findById(abonadoId).lean();
@@ -54,13 +69,13 @@ export async function POST(req: NextRequest) {
 
     // create caja movimiento
     const movimiento = await CajaMovimiento.create({
-      turnoId: turnoId ?? null,
+      turnoId: String((turno as any)._id),
       sourceType: 'abonado',
       sourceId: idOperacion ?? factura._id.toString(),
       amount: amount,
       paymentMethod: 'abonado',
       paymentReference: `Pago factura ${factura._id}`,
-      snapshot: { abonadoId: String(abonado._id), facturaId: String(factura._id) },
+      snapshot: { abonadoId: String((abonado as any)._id), facturaId: String(factura._id) },
       actorRole: 'admin',
       cajaId: null,
       cajaCode: '',

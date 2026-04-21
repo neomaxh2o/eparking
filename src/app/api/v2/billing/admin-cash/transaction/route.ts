@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import dbConnect from '@/lib/mongoose';
 import Turno from '@/models/Turno';
 import CajaMovimiento from '@/models/CajaMovimiento';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    if (!['admin', 'owner'].includes(session.user.role)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
     const body: unknown = await req.json().catch(() => null);
     const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
     const turnoId = b.turnoId as string | undefined;
@@ -19,9 +25,14 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
-    // validate turno exists
-    const turno = await Turno.findById(turnoId).lean<Record<string, unknown> | null>();
-    if (!turno) return NextResponse.json({ error: 'turno no encontrado' }, { status: 404 });
+    // validate turno exists and is still operable for current actor
+    const turno = await Turno.findOne({
+      _id: turnoId,
+      operatorId: session.user.id,
+      estado: 'abierto',
+      esCajaAdministrativa: true,
+    }).lean<Record<string, unknown> | null>();
+    if (!turno) return NextResponse.json({ error: 'Debes operar con una caja/turno administrativo abierto propio.' }, { status: 409 });
 
     // if idempotency key provided, check existing movement
     if (idOperacion) {

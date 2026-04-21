@@ -107,7 +107,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado }),
+        body: JSON.stringify({ estado, ...(estado === 'pagada' ? { adminCashTurnoId: turno?._id ?? null } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo actualizar');

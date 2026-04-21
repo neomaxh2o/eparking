@@ -71,6 +71,16 @@ export default function TurnoPanelV2({
   });
 
   const totalTurno = Number(turno?.totalTurno ?? 0);
+  // compute expected total from tickets when totalTurno is zero to avoid misleading $0.00
+  const expectedFromTickets = (turno?.tickets || []).reduce((acc: number, t: any) => {
+    const tarifa = t?.tarifa || {};
+    const qty = Number(t?.cantidad ?? t?.cantidadHoras ?? 1) || 1;
+    if (typeof tarifa.precioTotalAplicado === 'number' && tarifa.precioTotalAplicado > 0) return acc + Number(tarifa.precioTotalAplicado);
+    if (typeof tarifa.tarifaHora === 'number' && tarifa.tarifaHora > 0) return acc + Number(tarifa.tarifaHora) * Math.max(1, qty);
+    if (typeof tarifa.tarifaBaseHora === 'number' && tarifa.tarifaBaseHora > 0) return acc + Number(tarifa.tarifaBaseHora) * Math.max(1, qty);
+    return acc;
+  }, 0);
+
   const totalDeclarado = inputs.efectivo + inputs.tarjeta + inputs.otros;
   const diferencia = totalDeclarado - totalTurno;
   const tieneNegativos = [inputs.efectivo, inputs.tarjeta, inputs.otros].some((value) => value < 0);
@@ -161,7 +171,13 @@ export default function TurnoPanelV2({
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <p className="text-sm text-gray-500">Total turno</p>
               <p className="mt-2 text-2xl font-bold text-gray-900">
-                {formatMoney(turno.totalTurno)}
+                {totalTurno > 0 ? (
+                  formatMoney(totalTurno)
+                ) : (expectedFromTickets > 0 ? (
+                  <>{formatMoney(totalTurno)} <span className="text-sm font-medium text-gray-500">(esperado {formatMoney(expectedFromTickets)})</span></>
+                ) : (
+                  formatMoney(totalTurno)
+                ))}
               </p>
             </div>
           </div>

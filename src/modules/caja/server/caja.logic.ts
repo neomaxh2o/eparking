@@ -256,13 +256,29 @@ async function upsertTurnoTicket(operatorId: string, ticketObj: ITicket, totalCo
   }
 
   const ticketIndex = turno.tickets.findIndex((t: ITicket) => t.ticketNumber === ticketObj.ticketNumber);
+  const toAmount = (t: ITicket | typeof ticketObj) => {
+    // Use actual collected amount when present;
+    // otherwise derive expected amount from tarifa snapshot fields (precioTotalAplicado, tarifaHora*qty, tarifaBaseHora*qty)
+    const collected = Number(t.totalCobrado ?? 0);
+    if (collected > 0) return collected;
+
+    const tarifa = (t as any).tarifa || {};
+    const qty = Number((t as any).cantidad ?? (t as any).cantidadHoras ?? 1);
+
+    if (typeof tarifa.precioTotalAplicado === 'number' && tarifa.precioTotalAplicado > 0) return Number(tarifa.precioTotalAplicado);
+    if (typeof tarifa.tarifaHora === 'number' && tarifa.tarifaHora > 0) return Number(tarifa.tarifaHora) * Math.max(1, qty);
+    if (typeof tarifa.tarifaBaseHora === 'number' && tarifa.tarifaBaseHora > 0) return Number(tarifa.tarifaBaseHora) * Math.max(1, qty);
+
+    return 0;
+  };
+
   if (ticketIndex >= 0) {
     const ticketPrevio = turno.tickets[ticketIndex];
-    turno.totalTurno = turno.totalTurno - (ticketPrevio.totalCobrado ?? 0) + totalCobrado;
+    turno.totalTurno = turno.totalTurno - toAmount(ticketPrevio) + toAmount(ticketObj);
     turno.tickets[ticketIndex] = ticketObj;
   } else {
     turno.tickets.push(ticketObj);
-    turno.totalTurno += totalCobrado;
+    turno.totalTurno += toAmount(ticketObj);
   }
 
   await turno.save();
