@@ -23,6 +23,19 @@ function toObjectId(value: unknown, field: string) {
   return new mongoose.Types.ObjectId(String(value));
 }
 
+function toOptionalNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
 async function assignAvailableSubplaza(data: Partial<IEstadia>) {
   if (!data.tipoEstadia) {
     return { plazaAsignadaId: data.plazaAsignadaId, subplazaAsignadaNumero: data.subplazaAsignadaNumero };
@@ -120,9 +133,7 @@ export async function POST(req: NextRequest) {
 
     let plazaAsignadaId = data.plazaAsignadaId;
     const subplazaAsignadaNumeroValue = data.subplazaAsignadaNumero;
-    let subplazaAsignadaNumero = typeof subplazaAsignadaNumeroValue === 'number'
-      ? subplazaAsignadaNumeroValue
-      : undefined;
+    let subplazaAsignadaNumero = toOptionalNumber(subplazaAsignadaNumeroValue);
 
     if (!plazaAsignadaId && data.tipoEstadia) {
       const assigned = await assignAvailableSubplaza(data as Partial<IEstadia>);
@@ -195,7 +206,7 @@ export async function PUT(req: NextRequest) {
     }
 
     if ((updated.estado as unknown) === 'cerrada') {
-      await releaseSubplaza(updated.plazaAsignadaId, updated.subplazaAsignadaNumero);
+      await releaseSubplaza(updated.plazaAsignadaId, toOptionalNumber(updated.subplazaAsignadaNumero));
     }
 
     return NextResponse.json(updated, { status: 200 });

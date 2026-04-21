@@ -5,6 +5,7 @@ import User from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { emitAbonadoInvoice, accreditBillingDocument } from '@/modules/billing';
+import type { BillingFrequency } from '@/modules/billing/types/billing.types';
 
 type InitialChargeInput = {
   enabled?: boolean;
@@ -15,6 +16,10 @@ type InitialChargeInput = {
   paymentMethod?: string;
   paymentProvider?: string;
 };
+
+function toBillingFrequency(value: unknown): BillingFrequency | undefined {
+  return value === 'mensual' || value === 'diaria' || value === 'hora' ? value : undefined;
+}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -142,7 +147,7 @@ export async function POST(req: NextRequest) {
       actorUserId: session.user.id,
       source: 'abonado',
       operatorId: session.user.role === 'operator' ? session.user.id : null,
-      tipoFacturacion: initialCharge?.tipoFacturacion ?? (body.billingMode as string | undefined) ?? 'mensual',
+      tipoFacturacion: toBillingFrequency(initialCharge?.tipoFacturacion) ?? toBillingFrequency(body.billingMode) ?? 'mensual',
       monto: Number(initialCharge?.amount ?? body.importeBase ?? 0),
       estado: initialCharge?.markAsPaid ? 'emitida' : 'emitida',
       paymentReference: initialCharge?.paymentReference ?? undefined,
