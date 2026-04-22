@@ -73,6 +73,7 @@ export default function PanelFacturacion() {
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
   const activeAdminCashTurnoId = String(ownerOperations?.operationalSnapshot?.activeTurnoId ?? '').trim();
   const activeAdminCashParkingId = String(ownerOperations?.operationalSnapshot?.activeParkingId ?? '').trim();
+  const scopedParkinglotId = String(ownerOperations?.selectedParkingId ?? parkinglotId ?? '').trim();
 
   const fetchBillingDocuments = async () => {
     try {
@@ -80,6 +81,7 @@ export default function PanelFacturacion() {
       setError(null);
       const params = new URLSearchParams();
       if (invoiceSourceFilter) params.set('sourceType', invoiceSourceFilter);
+      if (scopedParkinglotId) params.set('parkinglotId', scopedParkinglotId);
       const res = await fetch(`/api/v2/billing/documents${params.toString() ? `?${params.toString()}` : ''}`);
       const data = await res.json();
       setBillingDocuments(Array.isArray(data) ? (data as BillingDocument[]) : []);
@@ -158,7 +160,7 @@ export default function PanelFacturacion() {
     void fetchClosures();
     void fetchCajasDisponibles();
     void fetchBillingParkings();
-  }, [invoiceSourceFilter]);
+  }, [invoiceSourceFilter, scopedParkinglotId]);
 
   useEffect(() => {
     if (ownerOperations?.selectedParkingId && ownerOperations.selectedParkingId !== parkinglotId) {
@@ -179,9 +181,11 @@ export default function PanelFacturacion() {
       const matchesSource = !invoiceSourceFilter || (f.sourceType || 'abonado') === invoiceSourceFilter;
       const matchesFiscalSource = !fiscalSourceFilter || (f.fiscalSource || 'fallback') === fiscalSourceFilter;
       const matchesFiscalStatus = !fiscalStatusFilter || (f.fiscalStatus || 'invalid') === fiscalStatusFilter;
-      return matchesSearch && matchesEstado && matchesTipo && matchesSource && matchesFiscalSource && matchesFiscalStatus;
+      const documentAssignedParking = String((f.assignedParking ?? (f as any)?.snapshot?.parking?._id ?? '') || '').trim();
+      const matchesParking = !scopedParkinglotId || documentAssignedParking === scopedParkinglotId;
+      return matchesSearch && matchesEstado && matchesTipo && matchesSource && matchesFiscalSource && matchesFiscalStatus && matchesParking;
     });
-  }, [billingDocuments, invoiceSearch, invoiceStatusFilter, invoiceTypeFilter, invoiceSourceFilter, fiscalSourceFilter, fiscalStatusFilter]);
+  }, [billingDocuments, invoiceSearch, invoiceStatusFilter, invoiceTypeFilter, invoiceSourceFilter, fiscalSourceFilter, fiscalStatusFilter, scopedParkinglotId]);
 
   const billingDocumentsByPeriod = useMemo(() => {
     return filteredBillingDocuments.reduce((acc, billingDocument) => {

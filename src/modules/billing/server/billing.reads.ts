@@ -1,5 +1,19 @@
+import mongoose from 'mongoose';
 import AbonadoInvoice from '@/models/AbonadoInvoice';
 import type { BillingDocument } from '@/modules/billing/types/billing.types';
+
+function normalizeBillingQuery(query: Record<string, unknown>): Record<string, unknown> {
+  const normalizedQuery = { ...query };
+  const assignedParking = typeof normalizedQuery.assignedParking === 'string' ? normalizedQuery.assignedParking.trim() : '';
+
+  if (assignedParking) {
+    normalizedQuery.assignedParking = mongoose.Types.ObjectId.isValid(assignedParking)
+      ? new mongoose.Types.ObjectId(assignedParking)
+      : assignedParking;
+  }
+
+  return normalizedQuery;
+}
 
 export function normalizeBillingDocument(invoice: any): BillingDocument {
   const sourceType = invoice?.sourceType ?? 'abonado';
@@ -9,6 +23,9 @@ export function normalizeBillingDocument(invoice: any): BillingDocument {
     ...invoice,
     _id: String(invoice?._id ?? ''),
     sourceType,
+    ownerId: invoice?.ownerId ? String(invoice.ownerId) : '',
+    operatorId: invoice?.operatorId ? String(invoice.operatorId) : '',
+    assignedParking: invoice?.assignedParking ? String(invoice.assignedParking) : '',
     abonadoNombre: `${invoice?.snapshot?.abonado?.nombre ?? ''} ${invoice?.snapshot?.abonado?.apellido ?? ''}`.trim(),
     abonadoEmail: invoice?.snapshot?.abonado?.email ?? '',
     tarifaNombre: invoice?.snapshot?.tarifaNombre ?? '',
@@ -41,7 +58,7 @@ export function normalizeBillingDocument(invoice: any): BillingDocument {
 }
 
 export async function listBillingDocuments(query: Record<string, unknown>): Promise<BillingDocument[]> {
-  const invoices = await AbonadoInvoice.find(query).sort({ createdAt: -1 }).lean();
+  const invoices = await AbonadoInvoice.find(normalizeBillingQuery(query)).sort({ createdAt: -1 }).lean();
   return invoices.map(normalizeBillingDocument);
 }
 
