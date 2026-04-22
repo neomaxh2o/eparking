@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { useTurno } from '@/app/hooks/Parking/Caja/useTurno';
+import { useTurno, type TurnoData } from '@/app/hooks/Parking/Caja/useTurno';
 import type { TurnoCaja } from '@/modules/caja/types/caja.types';
 import TurnoEventsTable from '@/modules/turnos/components/TurnoEventsTable';
 
@@ -29,8 +29,33 @@ function formatDate(value?: string | Date) {
   return date.toLocaleString();
 }
 
+function normalizeTurno(turno: TurnoData | null): TurnoCaja | null {
+  if (!turno) return null;
+
+  return {
+    ...turno,
+    fechaApertura: turno.fechaApertura.toISOString(),
+    fechaCierre: turno.fechaCierre?.toISOString(),
+    tickets: (turno.tickets ?? []).map((ticket) => ({
+      ...ticket,
+      horaEntrada: ticket.horaEntrada.toISOString(),
+      horaSalida: ticket.horaSalida?.toISOString(),
+      categoria: 'Otros',
+      estado: ticket.estado ?? 'activa',
+      tipoEstadia: ticket.tipoEstadia ?? 'libre',
+    })),
+    liquidacion: turno.liquidacion
+      ? {
+          ...turno.liquidacion,
+          fechaLiquidacion: turno.liquidacion.fechaLiquidacion.toISOString(),
+        }
+      : undefined,
+    numeroTurno: turno.numeroTurno ?? undefined,
+  };
+}
+
 function getTotalesSugeridos(turno: TurnoCaja | null): LiquidacionInputs {
-  const base: LiquidacionInputs = { efectivo: 0, tarjeta: 0, otros: 0 };
+  const base: LiquidacionInputs = { efectivo: 0, tarjeta: 0, otros: 0, observacion: '' };
 
   const tickets = Array.isArray(turno?.tickets) ? turno.tickets : [];
   for (const ticket of tickets) {
@@ -62,7 +87,8 @@ export default function TurnoPanelV2({
     liquidarTurno,
   } = useTurno(operatorId);
 
-  const sugerencias = useMemo(() => getTotalesSugeridos(turno), [turno]);
+  const turnoCaja = useMemo(() => normalizeTurno(turno), [turno]);
+  const sugerencias = useMemo(() => getTotalesSugeridos(turnoCaja), [turnoCaja]);
   const [inputs, setInputs] = useState<LiquidacionInputs>({
     efectivo: 0,
     tarjeta: 0,

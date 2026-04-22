@@ -1,0 +1,11 @@
+repo: /root/.openclaw/workspace-bitron/eparking
+branch: feature/owner-operations-refactor
+head_before_commit: 1049165878e29c077e9af2867e0da55831138a67
+command: npx tsc --noEmit --pretty false
+exit_code: 1
+
+filtered_target_matches:
+(none)
+
+note:
+The full project typecheck still reports many unrelated errors outside the two scoped files. The target files did not appear in the diagnostics after the fixes.

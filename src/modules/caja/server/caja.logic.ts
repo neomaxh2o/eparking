@@ -25,6 +25,20 @@ const METODOS_PAGO_VALIDOS = ['efectivo', 'tarjeta', 'qr', 'otros'] as const;
 
 type MetodoPago = (typeof METODOS_PAGO_VALIDOS)[number];
 
+type TarifaSnapshotAplicada = {
+  _id?: string;
+  nombre?: string;
+  tarifaHora?: number;
+  tarifaDia?: number;
+  tarifaLibre?: number;
+  tarifaBaseHora?: number;
+  fraccionMinutos?: number;
+  tipoEstadiaAplicada?: 'hora' | 'dia' | 'libre';
+  cantidadAplicada?: number;
+  precioUnitarioAplicado?: number;
+  precioTotalAplicado?: number;
+};
+
 type CloseEstadiaInput = {
   ticketNumber: string;
   metodoPago?: string;
@@ -101,15 +115,7 @@ export async function registrarIngreso(payload: {
 
   const tarifaId = String((tarifaDoc as { _id?: unknown })._id ?? payload.tarifaId ?? '');
 
-  let tarifaSnapshot: {
-    _id?: string;
-    nombre?: string;
-    tarifaHora?: number;
-    tarifaDia?: number;
-    tarifaLibre?: number;
-    tarifaBaseHora?: number;
-    fraccionMinutos?: number;
-  } | undefined;
+  let tarifaSnapshot: TarifaSnapshotAplicada | undefined;
 
   if (tipoEstadia === 'hora') {
     const tarifasHora = [...(((tarifaDoc as { tarifasHora?: Array<{ cantidad?: number; precioUnitario?: number; precioTotal?: number; precioConDescuento?: number }> }).tarifasHora) ?? [])]
