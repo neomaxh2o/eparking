@@ -7,7 +7,7 @@ import BillingDocumentsList from '@/modules/billing/components/BillingDocumentsL
 interface AdminTurnoPanelProps {
   parkinglotId: string;
   onTurnoChange?: (turno: any | null) => void;
-  externalTurno?: any | null; // optional: allow parent to own turno state
+  externalTurno?: any | null;
 }
 
 function formatMoney(value?: number) {
@@ -31,16 +31,15 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurnoChange, externalTurno }) => {
   const { data: session } = useSession();
-  const { turno: turnoHook, abrir, loadingFetch, loadingOpen, loadingClose, loadingLiquidar, loadingCobro, error, cerrar, liquidar, registrarCobro } = useTurnoAdmin(parkinglotId);
+  const { turno: turnoHook, liquidacion, loadingFetch, loadingOpen, loadingClose, loadingLiquidar, loadingCobro, error, abrir, cerrar, liquidar, registrarCobro } = useTurnoAdmin(parkinglotId);
 
-  // prefer externalTurno (passed from parent) when present; otherwise use hook turno
   const turno = externalTurno ?? turnoHook;
   const turnoEstadoRaw = String(turno?.estado ?? '').trim();
   const turnoEstadoNormalizado = turnoEstadoRaw.toLowerCase();
   const turnoAbierto = turnoEstadoNormalizado === 'abierto' || turnoEstadoNormalizado === 'en_curso';
-  const turnoEstadoLabel = turnoEstadoNormalizado ? turnoEstadoNormalizado.toUpperCase() : turnoEstadoRaw;
+  const turnoLiquidado = turnoEstadoNormalizado === 'liquidado';
+  const turnoEstadoLabel = turnoEstadoNormalizado ? turnoEstadoNormalizado.toUpperCase().replace(/_/g, ' ') : turnoEstadoRaw;
 
-  // useEffect to propagate changes from hook to parent
   useEffect(() => {
     if (typeof onTurnoChange === 'function') onTurnoChange(turnoHook ?? null);
   }, [turnoHook, onTurnoChange]);
@@ -54,8 +53,8 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
   };
 
   const mostrarNumeroTurno = Boolean(turno?.numeroTurno && turno.numeroTurno > 0);
-  const totalTickets = turno?.tickets?.length ?? 0;
-  const cajaNumber = Number(turno?.cajaNumero ?? turno?.numeroCaja ?? 0) || 1;
+  const totalTickets = liquidacion?.cantidadTickets ?? turno?.tickets?.length ?? 0;
+  const cajaNumber = Number(turno?.cajaNumero ?? turno?.numeroCaja ?? liquidacion?.cajaNumero ?? 0) || 1;
 
   const [billingDocuments, setBillingDocuments] = useState<any[]>([]);
   const [loadingBillingDocs, setLoadingBillingDocs] = useState(false);
@@ -69,7 +68,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
       const res = await fetch(`/api/v2/billing/documents?${params.toString()}`, { credentials: 'include' });
       const data = await res.json();
       setBillingDocuments(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch {
       setBillingDocuments([]);
     } finally {
       setLoadingBillingDocs(false);
@@ -90,11 +89,10 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
   }, [billingDocuments]);
 
   const acreditarDocumento = async (documentId: string) => {
-    if (!turno?._id) return alert('Abrí un turno administrativo antes.');
+    if (!turno?._id || !turnoAbierto) return alert('Abrí un turno administrativo antes.');
     try {
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: turno._id }),
       });
       const data = await res.json();
@@ -109,8 +107,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
   const marcarDocumento = async (documentId: string, estado: 'pagada' | 'vencida' | 'cancelada') => {
     try {
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado, ...(estado === 'pagada' ? { adminCashTurnoId: turno?._id ?? null } : {}) }),
       });
       const data = await res.json();
@@ -121,6 +118,20 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
       alert(e?.message || 'Error');
     }
   };
+
+  const resumenConfirmacion = useMemo(() => {
+    if (!turno?._id) return null;
+    return {
+      tickets: liquidacion?.cantidadTickets ?? turno?.tickets?.length ?? 0,
+      operaciones: liquidacion?.cantidadOperaciones ?? (turno?.tickets?.length ?? 0),
+      efectivo: liquidacion?.totalEfectivo ?? 0,
+      transferencia: liquidacion?.totalTransferencia ?? 0,
+      tarjeta: liquidacion?.totalTarjeta ?? 0,
+      otros: liquidacion?.totalOtros ?? 0,
+      ingresos: liquidacion?.totalIngresos ?? turno?.totalTurno ?? 0,
+      saldo: liquidacion?.saldoTeorico ?? turno?.totalTurno ?? 0,
+    };
+  }, [liquidacion, turno]);
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -136,7 +147,7 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
               </div>
 
               <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                <span className={`h-2.5 w-2.5 rounded-full ${turnoAbierto ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                <span className={`h-2.5 w-2.5 rounded-full ${turnoAbierto ? 'bg-emerald-500' : turnoLiquidado ? 'bg-blue-500' : 'bg-amber-500'}`}></span>
                 {turnoEstadoLabel || turno.estado}
               </div>
             </div>
@@ -146,105 +157,106 @@ const AdminTurnoPanel: React.FC<AdminTurnoPanelProps> = ({ parkinglotId, onTurno
               <Row label="Caja" value={String(cajaNumber).padStart(3, '0')} />
               <Row label="Apertura" value={formatDate(turno.fechaApertura)} />
               <Row label="Tickets" value={totalTickets} />
-              <Row label="Total cobrado" value={formatMoney(turno.totalTurno)} />
+              <Row label="Total cobrado" value={formatMoney(liquidacion?.saldoTeorico ?? turno.totalTurno)} />
               {turno.fechaCierre ? <Row label="Cierre" value={formatDate(turno.fechaCierre)} /> : null}
             </div>
 
-            <div className="mt-4 flex gap-3">
+            {resumenConfirmacion ? (
+              <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                <p className="font-semibold text-gray-900">Resumen previo de liquidación</p>
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div><strong>Tickets:</strong> {resumenConfirmacion.tickets}</div>
+                  <div><strong>Operaciones:</strong> {resumenConfirmacion.operaciones}</div>
+                  <div><strong>Saldo teórico:</strong> {formatMoney(resumenConfirmacion.saldo)}</div>
+                  <div><strong>Efectivo:</strong> {formatMoney(resumenConfirmacion.efectivo)}</div>
+                  <div><strong>Transferencia:</strong> {formatMoney(resumenConfirmacion.transferencia)}</div>
+                  <div><strong>Tarjeta:</strong> {formatMoney(resumenConfirmacion.tarjeta)}</div>
+                  <div><strong>Otros:</strong> {formatMoney(resumenConfirmacion.otros)}</div>
+                  <div><strong>Ingresos:</strong> {formatMoney(resumenConfirmacion.ingresos)}</div>
+                  <div><strong>Estado:</strong> {turnoEstadoLabel || '-'}</div>
+                </div>
+              </div>
+            ) : null}
+
+            {turnoLiquidado && liquidacion ? (
+              <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-semibold">Turno liquidado y congelado para reporting</p>
+                <p className="mt-1">Liquidado el {formatDate(liquidacion.fechaCierre || liquidacion.updatedAt)} por {liquidacion.liquidadoPor || liquidacion.operadorCierreId || '-'}</p>
+                <p className="mt-1">Saldo teórico: {formatMoney(liquidacion.saldoTeorico)} · Diferencia de caja: {formatMoney(liquidacion.diferenciaCaja)}</p>
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex flex-wrap gap-3">
               {turnoAbierto ? (
                 <>
-                  <button disabled={loadingClose} onClick={async () => {
-                    
-                    try {
-                      const ok = await cerrar();
-                      if (!ok) {
-                        // fallback: try direct fetch to ensure server receives the request
-                        if (!turno?._id) return alert('No hay turno disponible para cerrar.');
-                        const res = await fetch('/api/v2/billing/admin-cash', {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          credentials: 'include',
-                          body: JSON.stringify({ turnoId: turno._id, action: 'close' }),
-                        });
-                        const data = await res.json().catch(() => ({}));
-                        if (!res.ok) throw new Error(data?.error || data?.message || 'Error al cerrar turno');
-                        alert('Turno cerrado (fallback).');
-                        return;
-                      }
-                      alert('Turno cerrado.');
-                    } catch (e: any) {
-                      console.error('[ADMIN-TURNOPANEL] cerrar failed', e);
-                      alert(e?.message || 'Error al cerrar turno');
-                    }
-                  }} className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">Cerrar turno administrativo</button>
+                  <button
+                    disabled
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-400 cursor-not-allowed"
+                    title="El cierre manual quedó reemplazado por la liquidación integral del turno"
+                  >
+                    Cerrar turno administrativo
+                  </button>
 
-                  <button disabled={loadingLiquidar} onClick={async () => {
-                    
-                    try {
-                      const result = await liquidar();
-                      if (!result) {
-                        if (!turno?._id) return alert('No hay turno disponible para liquidar.');
-                        const res = await fetch('/api/v2/billing/admin-cash', {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          credentials: 'include',
-                          body: JSON.stringify({ turnoId: turno._id, liquidar: true }),
-                        });
-                        const data = await res.json().catch(() => ({}));
-                        if (!res.ok) throw new Error(data?.error || data?.message || 'Error al liquidar turno');
-                        alert('Turno liquidado (fallback).');
-                        return;
+                  <button
+                    disabled={loadingLiquidar || !turno?._id}
+                    onClick={async () => {
+                      try {
+                        const ok = window.confirm(`Vas a liquidar/cerrar el turno administrativo.\n\nTickets: ${resumenConfirmacion?.tickets ?? 0}\nOperaciones: ${resumenConfirmacion?.operaciones ?? 0}\nEfectivo: ${formatMoney(resumenConfirmacion?.efectivo)}\nTransferencia: ${formatMoney(resumenConfirmacion?.transferencia)}\nTarjeta: ${formatMoney(resumenConfirmacion?.tarjeta)}\nOtros: ${formatMoney(resumenConfirmacion?.otros)}\nSaldo teórico: ${formatMoney(resumenConfirmacion?.saldo)}\n\nDespués de liquidar no se podrán registrar más operaciones.`);
+                        if (!ok) return;
+                        const result = await liquidar({ operatorId: (session?.user as { id?: string } | undefined)?.id ?? '', observacion: 'Liquidación administrativa cerrada desde panel owner/admin' });
+                        if (!result) throw new Error('No se pudo liquidar el turno');
+                        alert('Turno liquidado y cerrado.');
+                      } catch (e: any) {
+                        console.error('[ADMIN-TURNOPANEL] liquidar failed', e);
+                        alert(e?.message || 'Error al liquidar turno');
                       }
-                      alert('Turno liquidado.');
-                    } catch (e: any) {
-                      console.error('[ADMIN-TURNOPANEL] liquidar failed', e);
-                      alert(e?.message || 'Error al liquidar turno');
-                    }
-                  }} className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">Liquidar turno</button>
+                    }}
+                    className="rounded-xl border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loadingLiquidar ? 'Liquidando...' : 'Cerrar / Liquidar turno'}
+                  </button>
 
-                  <button disabled={loadingCobro} onClick={async () => {
-                    
+                  <button disabled={loadingCobro || !turnoAbierto} onClick={async () => {
                     const monto = Number(prompt('Monto cobrado (ej: 100)') || 0);
                     if (monto <= 0) return;
                     try {
-                      const r = await registrarCobro({ monto, paymentMethod: 'efectivo' });
+                      const r = await registrarCobro({ turnoId: turno._id, monto, paymentMethod: 'efectivo' });
                       if (!r) throw new Error('No se pudo registrar el cobro');
                       alert('Cobro registrado.');
                     } catch (e: any) {
                       console.error('[ADMIN-TURNOPANEL] registrarCobro failed', e);
-                      // fallback to direct POST
                       if (!turno?._id) return alert('No hay turno disponible');
                       try {
                         const res = await fetch('/api/v2/billing/admin-cash/transaction', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          credentials: 'include',
+                          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
                           body: JSON.stringify({ turnoId: turno._id, monto, paymentMethod: 'efectivo' }),
                         });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok) throw new Error(data?.error || data?.message || 'Error al registrar cobro');
                         alert('Cobro registrado (fallback).');
-                        // refresh billing docs and turno
                         await fetchBillingDocs();
                       } catch (e2: any) {
                         console.error('[ADMIN-TURNOPANEL] fallback registrarCobro failed', e2);
                         alert(e2?.message || 'Error al registrar cobro');
                       }
                     }
-                  }} className="rounded-xl border border-gray-300 bg-gray-200 px-4 py-2 text-sm font-semibold">Registrar cobro admin</button>
+                  }} className="rounded-xl border border-gray-300 bg-gray-200 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Registrar cobro admin</button>
                 </>
               ) : null}
 
-              {turno.liquidacion?.reportUrl ? (
-                <a href={turno.liquidacion.reportUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold">Descargar reporte</a>
+              {turnoLiquidado ? (
+                <button disabled className="rounded-xl border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed">
+                  Turno liquidado · operaciones bloqueadas
+                </button>
               ) : null}
             </div>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
             <h4 className="text-base font-bold text-gray-900">Facturas y acreditaciones (acción bajo turno)</h4>
+            {!turnoAbierto ? <p className="mt-2 text-xs text-amber-700">Las acciones de cobro quedan deshabilitadas cuando el turno administrativo está liquidado.</p> : null}
             {loadingBillingDocs ? <p className="text-sm text-gray-500">Cargando facturas...</p> : (
-              <BillingDocumentsList billingDocumentsByPeriod={billingDocumentsByPeriod} acreditarDocumento={acreditarDocumento} marcarDocumento={marcarDocumento} />
+              <BillingDocumentsList billingDocumentsByPeriod={billingDocumentsByPeriod} acreditarDocumento={turnoAbierto ? acreditarDocumento : async () => {}} marcarDocumento={turnoAbierto ? marcarDocumento : async () => {}} />
             )}
           </div>
 

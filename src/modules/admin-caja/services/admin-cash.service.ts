@@ -48,11 +48,11 @@ export async function cerrarTurnoAdmin(turnoId: string): Promise<void> {
   await ensureOk(res);
 }
 
-export async function liquidarTurnoAdmin(turnoId: string, payload: { totalDeclarado?: number; observado?: string }): Promise<any> {
-  const res = await fetch('/api/v2/billing/admin-cash', {
-    method: 'PATCH',
+export async function liquidarTurnoAdmin(turnoId: string, payload: { operatorId?: string; totalDeclarado?: number; observado?: string; observacion?: string }): Promise<any> {
+  const res = await fetch('/api/v2/turno/liquidar', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ turnoId, liquidar: true, ...payload }),
+    body: JSON.stringify({ turnoId, ...payload }),
     credentials: 'include',
   });
   const json = await ensureOk(res);
@@ -60,7 +60,6 @@ export async function liquidarTurnoAdmin(turnoId: string, payload: { totalDeclar
 }
 
 export async function registrarCobroAdmin(payload: { turnoId: string; monto: number; paymentMethod?: string; descripcion?: string }) {
-  // client-side idempotency key to help servers that implement it later
   const idOperacion = `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
   const body = { ...payload, idOperacion };
   const res = await fetch('/api/v2/billing/admin-cash/transaction', {
@@ -71,4 +70,12 @@ export async function registrarCobroAdmin(payload: { turnoId: string; monto: num
   });
   const json = await ensureOk(res);
   return json;
+}
+
+export async function fetchLiquidacionTurno(turnoId: string) {
+  const res = await fetch(`/api/v2/turno/${encodeURIComponent(turnoId)}/liquidacion`, {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+  return ensureOk(res);
 }
