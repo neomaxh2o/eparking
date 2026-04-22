@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongoose';
 import { liquidarTurno } from '@/modules/turnos/server/turno.logic';
 import { serializeTurno } from '@/modules/caja/server/serializers';
@@ -8,11 +10,16 @@ import { buildAdminTurnoLiquidacion } from '@/modules/admin-caja/server/admin-tu
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
     await dbConnect();
 
-    const body = await req.json();
-    const operatorId = String(body?.operatorId ?? '').trim();
+    const body = await req.json().catch(() => null);
     const turnoId = String(body?.turnoId ?? '').trim();
+    const observacion = typeof body?.observacion === 'string' ? body.observacion : '';
 
     if (turnoId) {
       const turnoAdmin = await Turno.findById(turnoId);
@@ -21,12 +28,14 @@ export async function POST(req: NextRequest) {
       }
 
       if (turnoAdmin.esCajaAdministrativa) {
-        if (!operatorId) {
-          return NextResponse.json({ error: 'operatorId es requerido' }, { status: 400 });
+        // Regla aplicada: la liquidación administrativa solo puede ejecutarla el usuario autenticado
+        // con rol owner/admin sobre su propio turno administrativo; operatorId del body se ignora.
+        if (!['admin', 'owner'].includes(String(session.user.role ?? ''))) {
+          return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
         }
 
-        if (String(turnoAdmin.operatorId) !== operatorId) {
-          return NextResponse.json({ error: 'El turno no pertenece al operador indicado.' }, { status: 403 });
+        if (String(turnoAdmin.operatorId) !== session.user.id) {
+          return NextResponse.json({ error: 'El turno administrativo no pertenece al usuario autenticado.' }, { status: 403 });
         }
 
         if (String(turnoAdmin.estado) === 'liquidado') {
@@ -37,7 +46,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: 'El turno ya fue liquidado.' }, { status: 409 });
         }
 
-        const built = await buildAdminTurnoLiquidacion(turnoId, operatorId, typeof body?.observacion === 'string' ? body.observacion : '');
+        const built = await buildAdminTurnoLiquidacion(turnoId, session.user.id, observacion);
         const liquidacion = await TurnoLiquidacion.findOneAndUpdate(
           { turnoId },
           { $setOnInsert: built.payload },
@@ -64,15 +73,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!operatorId) {
-      return NextResponse.json({ error: 'operatorId es requerido' }, { status: 400 });
+    if (!['operator', 'admin', 'owner'].includes(String(session.user.role ?? ''))) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const turno = await liquidarTurno(operatorId, {
+    const turno = await liquidarTurno(session.user.id, {
       efectivo: Number(body?.efectivo ?? 0),
       tarjeta: Number(body?.tarjeta ?? 0),
       otros: Number(body?.otros ?? 0),
-      observacion: typeof body?.observacion === 'string' ? body.observacion : undefined,
+      observacion: observacion || undefined,
     });
 
     return NextResponse.json(await serializeTurno(turno), { status: 200 });

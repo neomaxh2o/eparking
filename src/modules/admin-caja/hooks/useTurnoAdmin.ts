@@ -92,14 +92,17 @@ export function useTurnoAdmin(parkinglotId?: string) {
     setError(null);
     try {
       const result = await liquidarTurnoAdmin(turno._id, payload ?? {});
-      setTurno(result);
       if (result?._id) {
         try {
           setLiquidacion(await fetchLiquidacionTurno(result._id));
         } catch {
           setLiquidacion(null);
         }
+      } else {
+        setLiquidacion(null);
       }
+      // Tras liquidar, el turno deja de ser el turno administrativo operable actual.
+      setTurno(null);
       return result;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo liquidar turno admin');

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const query: Record<string, unknown> = {
     operatorId: session.user.id,
     esCajaAdministrativa: true,
-    estado: { $in: ['abierto', 'liquidado'] },
+    estado: 'abierto',
   };
 
   if (parkinglotId) {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const existing = await Turno.findOne({
     operatorId: session.user.id,
     esCajaAdministrativa: true,
-    estado: { $in: ['abierto', 'liquidado'] },
+    estado: 'abierto',
   }).sort({ createdAt: -1 }).lean<Record<string, unknown> | null>();
 
   if (existing) {
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     if (existingParkingId === parkinglotId) {
       return NextResponse.json({ ok: true, turno: existing }, { status: 200 });
     }
-    return NextResponse.json({ error: 'Ya existe una caja administrativa activa o recientemente liquidada para este usuario.', turno: existing }, { status: 409 });
+    return NextResponse.json({ error: 'Ya existe una caja administrativa abierta para este usuario.', turno: existing }, { status: 409 });
   }
 
   const turno = await Turno.create({
