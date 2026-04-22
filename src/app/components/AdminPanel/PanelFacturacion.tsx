@@ -73,7 +73,8 @@ export default function PanelFacturacion() {
   const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
   const activeAdminCashTurnoId = String(ownerOperations?.operationalSnapshot?.activeTurnoId ?? '').trim();
   const activeAdminCashParkingId = String(ownerOperations?.operationalSnapshot?.activeParkingId ?? '').trim();
-  const scopedParkinglotId = String(ownerOperations?.selectedParkingId ?? parkinglotId ?? '').trim();
+  const ownerSelectedParkingId = String(ownerOperations?.selectedParkingId ?? '').trim();
+  const scopedParkinglotId = String(ownerSelectedParkingId || parkinglotId || '').trim();
 
   const fetchBillingDocuments = async () => {
     try {
@@ -110,7 +111,7 @@ export default function PanelFacturacion() {
       setLoadingClosures(true);
       const params = new URLSearchParams();
       params.set('type', 'zeta');
-      if (parkinglotId) params.set('parkinglotId', parkinglotId);
+      if (scopedParkinglotId) params.set('parkinglotId', scopedParkinglotId);
       if (cajaNumero) params.set('cajaNumero', cajaNumero);
       const res = await fetch(`/api/v2/billing/closures?${params.toString()}`);
       const data = await res.json();
@@ -163,14 +164,26 @@ export default function PanelFacturacion() {
   }, [invoiceSourceFilter, scopedParkinglotId]);
 
   useEffect(() => {
-    if (ownerOperations?.selectedParkingId && ownerOperations.selectedParkingId !== parkinglotId) {
-      setParkinglotId(ownerOperations.selectedParkingId);
+    if (ownerSelectedParkingId && ownerSelectedParkingId !== parkinglotId) {
+      setParkinglotId(ownerSelectedParkingId);
       return;
     }
-    void fetchCajasDisponibles(parkinglotId || undefined);
-    void fetchSelectedParkingBillingProfile(parkinglotId || undefined);
+    void fetchCajasDisponibles(scopedParkinglotId || undefined);
+    void fetchSelectedParkingBillingProfile(scopedParkinglotId || undefined);
+  }, [parkinglotId, ownerSelectedParkingId, scopedParkinglotId]);
+
+  useEffect(() => {
+    setParkinglotId(scopedParkinglotId);
     setCajaNumero('');
-  }, [parkinglotId, ownerOperations?.selectedParkingId]);
+    setClosureFrom('');
+    setClosureTo('');
+    setSelectedClosure(null);
+    setClosureMessage(null);
+    setSelectedParkingBillingProfile(null);
+    setIsQuickFiscalEditorOpen(false);
+    setError(null);
+    publishStatus('info', null);
+  }, [scopedParkinglotId]);
 
   const filteredBillingDocuments = useMemo(() => {
     return billingDocuments.filter((f) => {
@@ -210,14 +223,14 @@ export default function PanelFacturacion() {
   }, [filteredBillingDocuments]);
 
   const hasValidSelectedParkingBillingProfile = useMemo(() => {
-    if (!parkinglotId) return true;
+    if (!scopedParkinglotId) return true;
     return Boolean(
       selectedParkingBillingProfile?.enabled &&
       String(selectedParkingBillingProfile?.businessName ?? '').trim() &&
       String(selectedParkingBillingProfile?.documentNumber ?? '').trim() &&
       String(selectedParkingBillingProfile?.pointOfSale ?? '').trim(),
     );
-  }, [parkinglotId, selectedParkingBillingProfile]);
+  }, [scopedParkinglotId, selectedParkingBillingProfile]);
 
   const runFinancialControl = async () => {
     try {
@@ -266,7 +279,7 @@ export default function PanelFacturacion() {
         if (!activeAdminCashTurnoId) {
           throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de marcar como pagada.');
         }
-        if (parkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== String(parkinglotId)) {
+        if (scopedParkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== scopedParkinglotId) {
           throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
         }
       }
@@ -291,7 +304,7 @@ export default function PanelFacturacion() {
       if (!activeAdminCashTurnoId) {
         throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de acreditar pagos.');
       }
-      if (parkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== String(parkinglotId)) {
+      if (scopedParkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== scopedParkinglotId) {
         throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
       }
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
@@ -399,7 +412,7 @@ export default function PanelFacturacion() {
 
               {loading ? <p className="text-sm text-gray-500">Cargando documentos...</p> : null}
               {!filteredBillingDocuments.length ? (
-                <p className="text-sm text-gray-500">No hay documentos para los filtros actuales.</p>
+                <p className="text-sm text-gray-500">No hay documentos para la playa activa con los filtros actuales.</p>
               ) : (
                 <BillingControls>
                   <BillingDocumentsList
@@ -414,7 +427,7 @@ export default function PanelFacturacion() {
             <Tab.Panel className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
-                  <option value="">Seleccionar playa para perfil fiscal</option>
+                  <option value="">Seleccionar playa activa para perfil fiscal</option>
                   {parkingsFacturacion.map((parking) => (
                     <option key={parking._id} value={parking._id}>{parking.name}</option>
                   ))}
@@ -430,7 +443,7 @@ export default function PanelFacturacion() {
                 <p className="text-xs text-gray-500">Cargando perfil fiscal de la playa...</p>
               ) : selectedParkingBillingProfile ? (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 space-y-3">
-                  <p className="font-semibold">Perfil fiscal activo de la playa seleccionada</p>
+                  <p className="font-semibold">Perfil fiscal de la playa activa</p>
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <p><strong>Habilitado:</strong> {selectedParkingBillingProfile.enabled ? 'Sí' : 'No'}</p>
                     <p><strong>Razón social:</strong> {selectedParkingBillingProfile.businessName || '-'}</p>
@@ -442,20 +455,20 @@ export default function PanelFacturacion() {
                 </div>
               ) : parkinglotId ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 space-y-3">
-                  <p>La playa seleccionada no tiene perfil fiscal configurado.</p>
+                  <p>La playa activa no tiene perfil fiscal configurado.</p>
                   <button onClick={() => setIsQuickFiscalEditorOpen(true)} className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">
                     Configurar perfil fiscal
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">Selecciona una playa para consultar o editar su perfil fiscal de facturación.</p>
+                <p className="text-sm text-gray-500">Selecciona una playa activa para consultar o editar su perfil fiscal de facturación.</p>
               )}
             </Tab.Panel>
 
             <Tab.Panel className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
-                  <option value="">Todas las playas permitidas</option>
+                  <option value="">Playa activa</option>
                   {parkingsFacturacion.map((parking) => (
                     <option key={parking._id} value={parking._id}>{parking.name}</option>
                   ))}
@@ -471,9 +484,9 @@ export default function PanelFacturacion() {
               </div>
               <p className="text-xs text-gray-500">Owner solo puede ejecutar cierres sobre playas propias. Operator queda atado a su playa asignada y no está habilitado para cierre Z.</p>
 
-              {!hasValidSelectedParkingBillingProfile && parkinglotId ? (
+              {!hasValidSelectedParkingBillingProfile && scopedParkinglotId ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 space-y-3">
-                  <p>No se puede ejecutar cierre Z hasta que la playa seleccionada tenga un perfil fiscal válido y habilitado.</p>
+                  <p>No se puede ejecutar cierre Z hasta que la playa activa tenga un perfil fiscal válido y habilitado.</p>
                   <button onClick={() => setIsQuickFiscalEditorOpen(true)} className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100">
                     Editar perfil fiscal
                   </button>
@@ -623,7 +636,7 @@ export default function PanelFacturacion() {
 
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 space-y-2">
                 <p>El contexto operativo activo se gestiona desde el shell principal.</p>
-                <p><strong>Playa seleccionada:</strong> {parkinglotId || '-'}</p>
+                <p><strong>Playa activa:</strong> {scopedParkinglotId || '-'}</p>
                 <p><strong>Caja seleccionada:</strong> {cajaNumero || '-'}</p>
                 <p className="text-xs text-gray-500">Las acciones de apertura y cierre se resuelven fuera de este módulo.</p>
               </div>

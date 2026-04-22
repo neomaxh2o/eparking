@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 
 type BillingDoc = {
@@ -25,15 +25,24 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
   const [paymentReference, setPaymentReference] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const scopedParkingId = String(selectedParkingId ?? '').trim();
 
-  const fetchDocs = async () => {
-    const res = await fetch('/api/v2/billing/documents', { cache: 'no-store' });
+  const fetchDocs = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (scopedParkingId) params.set('parkinglotId', scopedParkingId);
+    const res = await fetch(`/api/v2/billing/documents${params.toString() ? `?${params.toString()}` : ''}`, { cache: 'no-store' });
     const data = await res.json().catch(() => []);
     const items = Array.isArray(data) ? data : [];
-    setDocs(selectedParkingId ? items.filter((d) => String(d.assignedParking || '') === String(selectedParkingId)) : items);
-  };
+    setDocs(scopedParkingId ? items.filter((d) => String(d.assignedParking || '') === scopedParkingId) : items);
+  }, [scopedParkingId]);
 
-  useEffect(() => { void fetchDocs(); }, [selectedParkingId]);
+  useEffect(() => {
+    setDocs([]);
+    setMessage(null);
+    setError(null);
+    setPaymentReference('');
+    void fetchDocs();
+  }, [fetchDocs]);
 
   const pending = useMemo(() => docs.filter((d) => ['emitida', 'pendiente', 'vencida'].includes(String(d.estado || ''))), [docs]);
   const paid = useMemo(() => docs.filter((d) => d.estado === 'pagada').slice(0, 10), [docs]);
@@ -67,7 +76,7 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
       if (!activeTurnoId) {
         throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de acreditar cobros.');
       }
-      if (selectedParkingId && activeTurnoParkingId && activeTurnoParkingId !== String(selectedParkingId)) {
+      if (scopedParkingId && activeTurnoParkingId && activeTurnoParkingId !== scopedParkingId) {
         throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
       }
       const res = await fetch(`/api/v2/billing/documents/${invoiceId}/acreditar`, {
@@ -87,8 +96,8 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Cobranzas</h2>
-        <p className="mt-1 text-sm text-gray-500">Bloque principal de operación para seguimiento y acreditación de cobros.</p>
+        <h2 className="text-2xl font-bold text-gray-900">Documentos de la playa activa</h2>
+        <p className="mt-1 text-sm text-gray-500">Bloque principal de operación para seguimiento y acreditación de cobros dentro de la playa seleccionada.</p>
       </div>
       {message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div> : null}
       {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
@@ -103,8 +112,8 @@ export default function OwnerCollectionsPanel({ selectedParkingId }: { selectedP
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-          <h3 className="text-lg font-bold text-gray-900">Facturas pendientes / vencidas</h3>
-          {!pending.length ? <p className="text-sm text-gray-500">No hay facturas pendientes para el filtro actual.</p> : pending.slice(0, 15).map((doc) => (
+          <h3 className="text-lg font-bold text-gray-900">Documentos pendientes / vencidos</h3>
+          {!pending.length ? <p className="text-sm text-gray-500">No hay documentos pendientes para la playa activa.</p> : pending.slice(0, 15).map((doc) => (
             <div key={doc._id} className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
