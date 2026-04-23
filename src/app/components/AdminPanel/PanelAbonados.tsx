@@ -5,6 +5,7 @@ import { Tab } from '@headlessui/react';
 import { useParkingLots } from '@/modules/parking/hooks/useParkingLots';
 import { useTarifas } from '@/app/hooks/Parking/useTarifas';
 import { useClientsNavigation } from '@/app/components/AdminPanel/ClientsNavigationContext';
+import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
 
 type Vehiculo = { patente: string; modelo?: string; categoria?: string; activo: boolean };
 type Acceso = { tipo: 'qr' | 'rfid' | 'manual' | 'otro'; valor: string; descripcion?: string; activo: boolean };
@@ -34,6 +35,8 @@ function classNames(...classes: string[]) {
 
 export default function PanelAbonados() {
   const clientsNavigation = useClientsNavigation();
+  const ownerOperations = useOwnerOperations();
+  const inlineStatusEnabled = !ownerOperations;
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [abonados, setAbonados] = useState<any[]>([]);
   const [abonadosByClientId, setAbonadosByClientId] = useState<Record<string, any>>({});
@@ -51,6 +54,11 @@ export default function PanelAbonados() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
   const [creationSummary, setCreationSummary] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!ownerOperations) return;
+    if (error) ownerOperations.setStatusMessage?.({ type: 'error', text: error });
+  }, [error, ownerOperations]);
 
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([{ patente: '', modelo: '', categoria: '', activo: true }]);
   const [accesos, setAccesos] = useState<Acceso[]>([{ tipo: 'manual', valor: '', descripcion: '', activo: true }]);
@@ -85,6 +93,7 @@ export default function PanelAbonados() {
     if (search.trim()) params.set('search', search.trim());
     if (abonadoSearchMode !== 'all') params.set('searchBy', abonadoSearchMode);
     if (estadoFiltro) params.set('estado', estadoFiltro);
+    if (ownerOperations?.selectedParkingId) params.set('assignedParking', ownerOperations.selectedParkingId);
 
     const abonadosRes = await fetch(`/api/v2/abonados${params.toString() ? `?${params.toString()}` : ''}`);
     const abonadosData = await abonadosRes.json();
@@ -114,7 +123,7 @@ export default function PanelAbonados() {
 
   useEffect(() => {
     void fetchAbonados();
-  }, [search, estadoFiltro, abonadoSearchMode]);
+  }, [search, estadoFiltro, abonadoSearchMode, ownerOperations?.selectedParkingId]);
 
   const selectedClient = clients.find((c) => c._id === clientId);
 
@@ -135,9 +144,13 @@ export default function PanelAbonados() {
     return tarifasMensuales.find((t: any) => String(t._id) === String(tarifaMensualId));
   }, [tarifasMensuales, tarifaMensualId]);
 
-  const filteredClients = clients;
+  const filteredClients = ownerOperations?.selectedParkingId
+    ? clients.filter((client) => String((client as any).assignedParkingId || (client as any).assignedParking || '') === String(ownerOperations.selectedParkingId))
+    : clients;
 
-  const filteredAbonados = abonados;
+  const filteredAbonados = ownerOperations?.selectedParkingId
+    ? abonados.filter((abonado) => String(abonado.assignedParking || '') === String(ownerOperations.selectedParkingId))
+    : abonados;
 
   const handleCreate = async () => {
     if (!clientId) {
@@ -192,7 +205,9 @@ export default function PanelAbonados() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo crear el abonado');
 
-      setMessage(`Abonado creado correctamente. Nro asignado: ${data?.numeroAbonado ?? '-'}.`);
+      const successMessage = `Abonado creado correctamente. Nro asignado: ${data?.numeroAbonado ?? '-'}.`;
+      setMessage(successMessage);
+      ownerOperations?.setStatusMessage?.({ type: 'success', text: successMessage });
       setCreationSummary({
         numeroAbonado: data?.numeroAbonado ?? null,
         clientName: `${data?.nombre ?? ''} ${data?.apellido ?? ''}`.trim(),
@@ -228,7 +243,9 @@ export default function PanelAbonados() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo actualizar estado');
-      setMessage(`Estado actualizado a ${estado}.`);
+      const successMessage = `Estado actualizado a ${estado}.`;
+      setMessage(successMessage);
+      ownerOperations?.setStatusMessage?.({ type: 'success', text: successMessage });
       setCreationSummary(null);
       await fetchAbonados();
     } catch (err: any) {
@@ -260,6 +277,7 @@ export default function PanelAbonados() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
       setMessage('Abonado actualizado correctamente.');
+      ownerOperations?.setStatusMessage?.({ type: 'success', text: 'Abonado actualizado correctamente.' });
       setCreationSummary(null);
       setEditingId(null);
       await fetchAbonados();
@@ -299,8 +317,8 @@ export default function PanelAbonados() {
         </div>
       </div>
 
-      {message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div> : null}
-      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      {inlineStatusEnabled && message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">{message}</div> : null}
+      {inlineStatusEnabled && error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
       {creationSummary ? (
         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 space-y-2">
           <p className="font-semibold">Resumen de alta</p>

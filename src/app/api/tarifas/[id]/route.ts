@@ -5,10 +5,11 @@ import { Tarifa } from '@/models/Tarifa';
 // ---------------- GET por ID ----------------
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   await connectToDatabase();
-  const tarifa = await Tarifa.findById(params.id);
+  const { id } = await context.params;
+  const tarifa = await Tarifa.findById(id).lean<Record<string, unknown> | null>();
   if (!tarifa) {
     return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
   }
@@ -18,46 +19,57 @@ export async function GET(
 // ---------------- PUT editar subdocumento ----------------
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const body = await req.json();
-    const { subId, tipo, data } = body; 
-    // tipo = 'tarifasHora' | 'tarifasPorDia' | 'tarifaMensual' | 'tarifaLibre'
+    const { id } = await context.params;
+    const raw: unknown = await req.json().catch(() => null);
+    const body = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
+    const subId = String(body.subId ?? '');
+    const tipo = String(body.tipo ?? '');
+    const data = body.data ?? {};
+    // tipo validation left to runtime
 
-    const tarifa = await Tarifa.findById(params.id);
+    const tarifa = await Tarifa.findById(id);
     if (!tarifa) return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
 
-    tarifa[tipo] = tarifa[tipo].map((s: any) =>
-      s._id.toString() === subId ? { ...s.toObject(), ...data } : s
+    const currentItems = Array.isArray(tarifa[tipo]) ? tarifa[tipo] : [];
+    tarifa[tipo] = currentItems.map((s: Record<string, unknown> & { toObject?: () => Record<string, unknown> }) =>
+      String(s._id) === subId
+        ? { ...(typeof s.toObject === 'function' ? s.toObject() : s), ...(data as Record<string, unknown>) }
+        : s,
     );
 
     await tarifa.save();
     return NextResponse.json({ success: true, tarifa });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error actualizando subdocumento' }, { status: 400 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Error actualizando subdocumento' }, { status: 400 });
   }
 }
 
 // ---------------- DELETE subdocumento ----------------
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const body = await req.json();
-    const { subId, tipo } = body;
+    const { id } = await context.params;
+    const raw: unknown = await req.json().catch(() => null);
+    const body = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
+    const subId = String(body.subId ?? '');
+    const tipo = String(body.tipo ?? '');
 
-    const tarifa = await Tarifa.findById(params.id);
+    const tarifa = await Tarifa.findById(id);
     if (!tarifa) return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
 
-    tarifa[tipo] = tarifa[tipo].filter((s: any) => s._id.toString() !== subId);
+    const currentItems = Array.isArray(tarifa[tipo]) ? tarifa[tipo] : [];
+    tarifa[tipo] = currentItems.filter((s: Record<string, unknown> & { _id?: unknown }) => String(s._id) !== subId);
     await tarifa.save();
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error eliminando subdocumento' }, { status: 400 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Error eliminando subdocumento' }, { status: 400 });
   }
 }

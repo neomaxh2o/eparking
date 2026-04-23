@@ -5,6 +5,21 @@ import User from '@/models/User';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { emitAbonadoInvoice, accreditBillingDocument } from '@/modules/billing';
+import type { BillingFrequency } from '@/modules/billing/types/billing.types';
+
+type InitialChargeInput = {
+  enabled?: boolean;
+  tipoFacturacion?: string;
+  amount?: number;
+  markAsPaid?: boolean;
+  paymentReference?: string;
+  paymentMethod?: string;
+  paymentProvider?: string;
+};
+
+function toBillingFrequency(value: unknown): BillingFrequency | undefined {
+  return value === 'mensual' || value === 'diaria' || value === 'hora' ? value : undefined;
+}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -60,7 +75,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const items = await Abonado.find(query).sort({ createdAt: -1 }).lean();
+  const items = await Abonado.find(query).sort({ createdAt: -1 }).lean<Record<string, unknown>[]>();
   return NextResponse.json(items, { status: 200 });
 }
 
@@ -74,75 +89,80 @@ export async function POST(req: NextRequest) {
   }
 
   await dbConnect();
-  const body = await req.json();
-  const clientId = body?.clientId;
+  const raw: unknown = await req.json().catch(() => null);
+  const body = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
+  const clientId = body.clientId as string | undefined;
 
   if (!clientId) {
     return NextResponse.json({ error: 'Falta clientId' }, { status: 400 });
   }
 
-  const client = await User.findById(clientId).lean();
-  if (!client || client.role !== 'client') {
+  const client = await User.findById(clientId).lean<Record<string, unknown> | null>();
+  if (!client || (client.role as unknown) !== 'client') {
     return NextResponse.json({ error: 'Cliente inválido' }, { status: 400 });
   }
 
-  const existingAbonado = await Abonado.findOne({ clientId }).lean();
+  const existingAbonado = await Abonado.findOne({ clientId }).lean<Record<string, unknown> | null>();
   if (existingAbonado) {
     return NextResponse.json({ error: 'El cliente seleccionado ya tiene un abonado asociado.' }, { status: 409 });
   }
 
-  const lastAbonado = await Abonado.findOne({}, { numeroAbonado: 1 }).sort({ numeroAbonado: -1 }).lean();
-  const nextNumeroAbonado = Number((lastAbonado as any)?.numeroAbonado ?? 0) + 1;
+  const lastAbonado = await Abonado.findOne({}, { numeroAbonado: 1 }).sort({ numeroAbonado: -1 }).lean<Record<string, unknown> | null>();
+  const nextNumeroAbonado = Number((lastAbonado?.numeroAbonado ?? 0) as number) + 1;
 
   const abonado = await Abonado.create({
     clientId,
     numeroAbonado: nextNumeroAbonado,
-    ownerId: session.user.role === 'owner' ? session.user.id : body?.ownerId ?? null,
-    assignedParking: body?.assignedParking ?? client.assignedParking ?? null,
-    estado: body?.estado ?? 'activo',
-    nombre: body?.nombre ?? client.nombre,
-    apellido: body?.apellido ?? client.apellido,
-    dni: body?.dni ?? client.dni,
-    telefono: body?.telefono ?? client.telefono,
-    ciudad: body?.ciudad ?? client.ciudad,
-    domicilio: body?.domicilio ?? client.domicilio,
-    email: body?.email ?? client.email,
-    vehiculos: Array.isArray(body?.vehiculos) ? body.vehiculos : client.patenteVehiculo ? [{ patente: client.patenteVehiculo, modelo: client.modeloVehiculo, categoria: client.categoriaVehiculo, activo: true }] : [],
-    accesos: Array.isArray(body?.accesos) ? body.accesos : [],
-    observaciones: body?.observaciones ?? '',
-    fechaVencimiento: body?.fechaVencimiento ?? null,
-    billingMode: body?.billingMode ?? 'mensual',
-    tarifaId: body?.tarifaId ?? '',
-    tarifaNombre: body?.tarifaNombre ?? '',
-    importeBase: Number(body?.importeBase ?? 0),
-    tarifaSnapshot: body?.tarifaSnapshot ?? {},
+    ownerId: session.user.role === 'owner' ? session.user.id : (body.ownerId as string) ?? null,
+    assignedParking: body.assignedParking ?? client.assignedParking ?? null,
+    estado: (body.estado as string) ?? 'activo',
+    nombre: (body.nombre as string) ?? (client.nombre as string | undefined),
+    apellido: (body.apellido as string) ?? (client.apellido as string | undefined),
+    dni: (body.dni as string) ?? (client.dni as string | undefined),
+    telefono: (body.telefono as string) ?? (client.telefono as string | undefined),
+    ciudad: (body.ciudad as string) ?? (client.ciudad as string | undefined),
+    domicilio: (body.domicilio as string) ?? (client.domicilio as string | undefined),
+    email: (body.email as string) ?? (client.email as string | undefined),
+    vehiculos: Array.isArray(body.vehiculos) ? (body.vehiculos as unknown[]) : (client.patenteVehiculo ? [{ patente: client.patenteVehiculo, modelo: client.modeloVehiculo, categoria: client.categoriaVehiculo, activo: true }] : []),
+    accesos: Array.isArray(body.accesos) ? (body.accesos as unknown[]) : [],
+    observaciones: (body.observaciones as string) ?? '',
+    fechaVencimiento: body.fechaVencimiento ?? null,
+    billingMode: (body.billingMode as string) ?? 'mensual',
+    tarifaId: (body.tarifaId as string) ?? '',
+    tarifaNombre: (body.tarifaNombre as string) ?? '',
+    importeBase: Number(body.importeBase ?? 0),
+    tarifaSnapshot: body.tarifaSnapshot ?? {},
   });
+
+  const initialCharge = (body.initialCharge && typeof body.initialCharge === 'object')
+    ? (body.initialCharge as InitialChargeInput)
+    : undefined;
 
   let initialInvoice: any = null;
 
-  if (body?.initialCharge?.enabled) {
+  if (initialCharge?.enabled) {
     initialInvoice = await emitAbonadoInvoice({
       abonadoId: String(abonado._id),
       actorRole: session.user.role === 'operator' ? 'operator' : session.user.role === 'owner' ? 'owner' : 'admin',
       actorUserId: session.user.id,
       source: 'abonado',
       operatorId: session.user.role === 'operator' ? session.user.id : null,
-      tipoFacturacion: body?.initialCharge?.tipoFacturacion ?? body?.billingMode ?? 'mensual',
-      monto: Number(body?.initialCharge?.amount ?? body?.importeBase ?? 0),
-      estado: body?.initialCharge?.markAsPaid ? 'emitida' : 'emitida',
-      paymentReference: body?.initialCharge?.paymentReference ?? undefined,
+      tipoFacturacion: toBillingFrequency(initialCharge?.tipoFacturacion) ?? toBillingFrequency(body.billingMode) ?? 'mensual',
+      monto: Number(initialCharge?.amount ?? body.importeBase ?? 0),
+      estado: initialCharge?.markAsPaid ? 'emitida' : 'emitida',
+      paymentReference: initialCharge?.paymentReference ?? undefined,
     });
 
-    if (body?.initialCharge?.markAsPaid && initialInvoice?._id) {
+    if (initialCharge?.markAsPaid && initialInvoice?._id) {
       const accreditResult = await accreditBillingDocument(
         {
           _id: initialInvoice._id,
           ...(session.user.role === 'owner' ? { ownerId: session.user.id } : {}),
         },
         {
-          paymentMethod: body?.initialCharge?.paymentMethod ?? 'efectivo',
-          paymentProvider: body?.initialCharge?.paymentProvider ?? 'manual',
-          paymentReference: body?.initialCharge?.paymentReference ?? '',
+          paymentMethod: initialCharge?.paymentMethod ?? 'efectivo',
+          paymentProvider: initialCharge?.paymentProvider ?? 'manual',
+          paymentReference: initialCharge?.paymentReference ?? '',
         },
       );
 

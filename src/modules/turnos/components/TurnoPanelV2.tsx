@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { useTurno } from '@/app/hooks/Parking/Caja/useTurno';
+import { useTurno, type TurnoData } from '@/app/hooks/Parking/Caja/useTurno';
 import type { TurnoCaja } from '@/modules/caja/types/caja.types';
 import TurnoEventsTable from '@/modules/turnos/components/TurnoEventsTable';
 
@@ -22,15 +22,40 @@ function formatMoney(value?: number) {
   return `$${Number(value ?? 0).toFixed(2)}`;
 }
 
-function formatDate(value?: string) {
+function formatDate(value?: string | Date) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
   return date.toLocaleString();
 }
 
+function normalizeTurno(turno: TurnoData | null): TurnoCaja | null {
+  if (!turno) return null;
+
+  return {
+    ...turno,
+    fechaApertura: turno.fechaApertura.toISOString(),
+    fechaCierre: turno.fechaCierre?.toISOString(),
+    tickets: (turno.tickets ?? []).map((ticket) => ({
+      ...ticket,
+      horaEntrada: ticket.horaEntrada.toISOString(),
+      horaSalida: ticket.horaSalida?.toISOString(),
+      categoria: 'Otros',
+      estado: ticket.estado ?? 'activa',
+      tipoEstadia: ticket.tipoEstadia ?? 'libre',
+    })),
+    liquidacion: turno.liquidacion
+      ? {
+          ...turno.liquidacion,
+          fechaLiquidacion: turno.liquidacion.fechaLiquidacion.toISOString(),
+        }
+      : undefined,
+    numeroTurno: turno.numeroTurno ?? undefined,
+  };
+}
+
 function getTotalesSugeridos(turno: TurnoCaja | null): LiquidacionInputs {
-  const base: LiquidacionInputs = { efectivo: 0, tarjeta: 0, otros: 0 };
+  const base: LiquidacionInputs = { efectivo: 0, tarjeta: 0, otros: 0, observacion: '' };
 
   const tickets = Array.isArray(turno?.tickets) ? turno.tickets : [];
   for (const ticket of tickets) {
@@ -62,7 +87,8 @@ export default function TurnoPanelV2({
     liquidarTurno,
   } = useTurno(operatorId);
 
-  const sugerencias = useMemo(() => getTotalesSugeridos(turno), [turno]);
+  const turnoCaja = useMemo(() => normalizeTurno(turno), [turno]);
+  const sugerencias = useMemo(() => getTotalesSugeridos(turnoCaja), [turnoCaja]);
   const [inputs, setInputs] = useState<LiquidacionInputs>({
     efectivo: 0,
     tarjeta: 0,
@@ -71,6 +97,16 @@ export default function TurnoPanelV2({
   });
 
   const totalTurno = Number(turno?.totalTurno ?? 0);
+  // compute expected total from tickets when totalTurno is zero to avoid misleading $0.00
+  const expectedFromTickets = (turno?.tickets || []).reduce((acc: number, t: any) => {
+    const tarifa = t?.tarifa || {};
+    const qty = Number(t?.cantidad ?? t?.cantidadHoras ?? 1) || 1;
+    if (typeof tarifa.precioTotalAplicado === 'number' && tarifa.precioTotalAplicado > 0) return acc + Number(tarifa.precioTotalAplicado);
+    if (typeof tarifa.tarifaHora === 'number' && tarifa.tarifaHora > 0) return acc + Number(tarifa.tarifaHora) * Math.max(1, qty);
+    if (typeof tarifa.tarifaBaseHora === 'number' && tarifa.tarifaBaseHora > 0) return acc + Number(tarifa.tarifaBaseHora) * Math.max(1, qty);
+    return acc;
+  }, 0);
+
   const totalDeclarado = inputs.efectivo + inputs.tarjeta + inputs.otros;
   const diferencia = totalDeclarado - totalTurno;
   const tieneNegativos = [inputs.efectivo, inputs.tarjeta, inputs.otros].some((value) => value < 0);
@@ -161,7 +197,13 @@ export default function TurnoPanelV2({
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <p className="text-sm text-gray-500">Total turno</p>
               <p className="mt-2 text-2xl font-bold text-gray-900">
-                {formatMoney(turno.totalTurno)}
+                {totalTurno > 0 ? (
+                  formatMoney(totalTurno)
+                ) : (expectedFromTickets > 0 ? (
+                  <>{formatMoney(totalTurno)} <span className="text-sm font-medium text-gray-500">(esperado {formatMoney(expectedFromTickets)})</span></>
+                ) : (
+                  formatMoney(totalTurno)
+                ))}
               </p>
             </div>
           </div>
@@ -169,7 +211,9 @@ export default function TurnoPanelV2({
           {loading && <p className="text-sm text-gray-500">Procesando...</p>}
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-          {renderIngresosSalidas?.(turno.estado ?? null)}
+          {renderIngresosSalidas?.(
+            turno.estado === 'abierto' || turno.estado === 'cerrado' ? turno.estado : null
+          )}
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

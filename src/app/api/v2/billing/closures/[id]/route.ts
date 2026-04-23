@@ -5,7 +5,7 @@ import dbConnect from '@/lib/mongoose';
 import BillingClosure from '@/models/BillingClosure';
 import AbonadoInvoice from '@/models/AbonadoInvoice';
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -16,7 +16,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 
   await dbConnect();
-  const closure = await BillingClosure.findById(params.id).lean();
+  const { id } = await context.params;
+  const closure = await BillingClosure.findById(id).lean<Record<string, unknown> | null>();
   if (!closure) {
     return NextResponse.json({ error: 'Cierre no encontrado' }, { status: 404 });
   }
@@ -25,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'No autorizado para ver este cierre' }, { status: 403 });
   }
 
-  const documents = await AbonadoInvoice.find({ billingClosureId: closure._id }).lean();
+  const documents = await AbonadoInvoice.find({ billingClosureId: closure._id }).lean<Record<string, unknown>[]>();
 
   return NextResponse.json({
     ...closure,

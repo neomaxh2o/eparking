@@ -13,10 +13,26 @@ export default function useAuditoriaCajas(){
     try{
       const res = await getCajas()
       const cajasRaw = res.cajas || []
-      const cajasNorm = cajasRaw.map((c:any) => ({
-        ...c,
-        turnoAbiertoNormalized: Boolean(c.turnoAbierto || c.turnoId || (c.turno && /abierto|open/i.test(String(c.turno.estado || ''))))
-      }))
+      const cajasNorm = cajasRaw.map((c:any) => {
+        // normalize turno if present
+        const turnoRaw = c.turno ?? null
+        let turnoNorm = null
+        if (turnoRaw) {
+          try {
+            const { adaptTurnoFromLegacy } = require('@/modules/turnos/adapters/turno.adapter')
+            turnoNorm = adaptTurnoFromLegacy(turnoRaw)
+          } catch (e) {
+            // fallback: attempt best-effort normalization
+            const estado = String((turnoRaw && turnoRaw.estado) || '').trim().toLowerCase()
+            turnoNorm = { ...turnoRaw, estado: /abierto|open|en_curso/.test(estado) ? 'abierto' : estado }
+          }
+        }
+        return {
+          ...c,
+          turno: turnoNorm ?? c.turno,
+          turnoAbiertoNormalized: Boolean((turnoNorm && String(turnoNorm.estado).trim().toLowerCase() === 'abierto') || c.turnoAbierto || c.turnoId)
+        }
+      })
       setCajas(cajasNorm)
       setSummary(res.summary||{})
       setError(null)

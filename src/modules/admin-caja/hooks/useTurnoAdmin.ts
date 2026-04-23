@@ -7,24 +7,40 @@ import {
   cerrarTurnoAdmin,
   liquidarTurnoAdmin,
   registrarCobroAdmin,
+  fetchLiquidacionTurno,
 } from '@/modules/admin-caja/services/admin-cash.service';
 
 export function useTurnoAdmin(parkinglotId?: string) {
   const [turno, setTurno] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [liquidacion, setLiquidacion] = useState<any | null>(null);
+  const [loadingFetch, setLoadingFetch] = useState(false);
+  const [loadingOpen, setLoadingOpen] = useState(false);
+  const [loadingClose, setLoadingClose] = useState(false);
+  const [loadingLiquidar, setLoadingLiquidar] = useState(false);
+  const [loadingCobro, setLoadingCobro] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTurno = useCallback(async () => {
-    setLoading(true);
+    setLoadingFetch(true);
     setError(null);
     try {
       const result = await fetchTurnoAdminActual(parkinglotId);
       setTurno(result);
+      if (result?._id && String(result?.estado ?? '') === 'liquidado') {
+        try {
+          setLiquidacion(await fetchLiquidacionTurno(result._id));
+        } catch {
+          setLiquidacion(null);
+        }
+      } else {
+        setLiquidacion(null);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo obtener el turno admin');
       setTurno(null);
+      setLiquidacion(null);
     } finally {
-      setLoading(false);
+      setLoadingFetch(false);
     }
   }, [parkinglotId]);
 
@@ -33,17 +49,18 @@ export function useTurnoAdmin(parkinglotId?: string) {
       setError('Debe indicar la playa para abrir turno administrativo.');
       return null;
     }
-    setLoading(true);
+    setLoadingOpen(true);
     setError(null);
     try {
       const result = await abrirTurnoAdmin({ parkinglotId, esCajaAdministrativa: true, operatorName: opts?.operatorName });
       setTurno(result);
+      setLiquidacion(null);
       return result;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo abrir turno admin');
       return null;
     } finally {
-      setLoading(false);
+      setLoadingOpen(false);
     }
   }, [parkinglotId]);
 
@@ -52,7 +69,7 @@ export function useTurnoAdmin(parkinglotId?: string) {
       setError('No hay turno abierto para cerrar.');
       return false;
     }
-    setLoading(true);
+    setLoadingClose(true);
     setError(null);
     try {
       await cerrarTurnoAdmin(turno._id);
@@ -62,46 +79,56 @@ export function useTurnoAdmin(parkinglotId?: string) {
       setError(err instanceof Error ? err.message : 'No se pudo cerrar turno admin');
       return false;
     } finally {
-      setLoading(false);
+      setLoadingClose(false);
     }
   }, [turno]);
 
-  const liquidar = useCallback(async (payload?: { totalDeclarado?: number; observado?: string }) => {
+  const liquidar = useCallback(async (payload?: { operatorId?: string; totalDeclarado?: number; observado?: string; observacion?: string }) => {
     if (!turno || !turno._id) {
       setError('No hay turno abierto para liquidar.');
       return null;
     }
-    setLoading(true);
+    setLoadingLiquidar(true);
     setError(null);
     try {
       const result = await liquidarTurnoAdmin(turno._id, payload ?? {});
-      setTurno(result);
+      if (result?._id) {
+        try {
+          setLiquidacion(await fetchLiquidacionTurno(result._id));
+        } catch {
+          setLiquidacion(null);
+        }
+      } else {
+        setLiquidacion(null);
+      }
+      // Tras liquidar, el turno deja de ser el turno administrativo operable actual.
+      setTurno(null);
       return result;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo liquidar turno admin');
       return null;
     } finally {
-      setLoading(false);
+      setLoadingLiquidar(false);
     }
   }, [turno]);
 
-  const registrarCobro = useCallback(async (payload: { monto: number; paymentMethod?: string; descripcion?: string }) => {
+  const registrarCobro = useCallback(async (payload: { turnoId: string; monto: number; paymentMethod?: string; descripcion?: string }) => {
     if (!turno || !turno._id) {
       setError('No hay turno abierto para registrar cobro.');
       return null;
     }
-    setLoading(true);
+    setLoadingCobro(true);
     setError(null);
     try {
-      const result = await registrarCobroAdmin({ turnoId: turno._id, ...payload });
-      // refetch turno to update totals
+      const { turnoId: _ignoredTurnoId, ...restPayload } = payload;
+      const result = await registrarCobroAdmin({ turnoId: turno._id, ...restPayload });
       await fetchTurno();
       return result;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar cobro admin');
       return null;
     } finally {
-      setLoading(false);
+      setLoadingCobro(false);
     }
   }, [turno, fetchTurno]);
 
@@ -111,7 +138,12 @@ export function useTurnoAdmin(parkinglotId?: string) {
 
   return {
     turno,
-    loading,
+    liquidacion,
+    loadingFetch,
+    loadingOpen,
+    loadingClose,
+    loadingLiquidar,
+    loadingCobro,
     error,
     fetchTurno,
     abrir,

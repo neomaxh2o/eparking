@@ -33,7 +33,7 @@ const CajaOperador: React.FC = () => {
           {turno.fechaCierre && (
             <p><strong>Fecha cierre:</strong> {new Date(turno.fechaCierre).toLocaleString()}</p>
           )}
-          <p><strong>Total cobrado:</strong> ${turno.totalTurno}</p>
+          <p><strong>Total cobrado:</strong> {turno.totalTurno > 0 ? (`$${turno.totalTurno.toFixed(2)}`) : (() => { const expected = (turno.tickets || []).reduce((acc: number, t: any) => { const tarifa = t?.tarifa || {}; const qty = Number(t?.cantidad ?? t?.cantidadHoras ?? 1); if (typeof tarifa.precioTotalAplicado === 'number' && tarifa.precioTotalAplicado > 0) return acc + Number(tarifa.precioTotalAplicado); if (typeof tarifa.tarifaHora === 'number' && tarifa.tarifaHora > 0) return acc + Number(tarifa.tarifaHora) * Math.max(1, qty); if (typeof tarifa.tarifaBaseHora === 'number' && tarifa.tarifaBaseHora > 0) return acc + Number(tarifa.tarifaBaseHora) * Math.max(1, qty); return acc; }, 0); return expected > 0 ? (<>{`$${turno.totalTurno.toFixed(2)}`} <span className="text-sm font-medium text-gray-500">(esperado {'$'+expected.toFixed(2)})</span></>) : (`$${turno.totalTurno.toFixed(2)}`); })()}</p>
 
           <h3 className="mt-2 font-semibold">Tickets del turno</h3>
           <ul className="border rounded p-2 max-h-64 overflow-y-auto">

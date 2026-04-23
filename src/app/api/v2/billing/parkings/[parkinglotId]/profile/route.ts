@@ -4,12 +4,13 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongoose';
 import ParkingLot from '@/models/ParkingLot';
 
-function validateBillingProfile(body: any) {
-  const enabled = Boolean(body?.enabled ?? false);
-  const businessName = String(body?.businessName ?? '').trim();
-  const documentNumber = String(body?.documentNumber ?? '').trim();
-  const pointOfSale = String(body?.pointOfSale ?? '').trim();
-  const email = String(body?.email ?? '').trim();
+function validateBillingProfile(body: unknown) {
+  const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
+  const enabled = Boolean(b?.enabled ?? false);
+  const businessName = String(b?.businessName ?? '').trim();
+  const documentNumber = String(b?.documentNumber ?? '').trim();
+  const pointOfSale = String(b?.pointOfSale ?? '').trim();
+  const email = String(b?.email ?? '').trim();
 
   if (!enabled) {
     return null;
@@ -32,7 +33,7 @@ function validateBillingProfile(body: any) {
   }
 
   const digitsOnly = documentNumber.replace(/\D/g, '');
-  const documentType = String(body?.documentType ?? 'cuit');
+  const documentType = String(b?.documentType ?? 'cuit');
   if (documentType === 'cuit' && digitsOnly.length !== 11) {
     return 'El CUIT debe tener 11 dígitos.';
   }
@@ -59,15 +60,15 @@ export async function GET(
   const query: Record<string, unknown> = { _id: parkinglotId };
   if (session.user.role === 'owner') query.owner = session.user.id;
 
-  const parking = await ParkingLot.findOne(query).lean();
+  const parking = await ParkingLot.findOne(query).lean<Record<string, unknown> | null>();
   if (!parking) {
     return NextResponse.json({ error: 'Playa no encontrada' }, { status: 404 });
   }
 
   return NextResponse.json({
-    parkinglotId: String((parking as any)._id),
-    parkingName: String((parking as any).name ?? ''),
-    billingProfile: (parking as any).billingProfile ?? {},
+    parkinglotId: String(parking._id),
+    parkingName: String(parking.name ?? ''),
+    billingProfile: parking.billingProfile ?? {},
   }, { status: 200 });
 }
 
@@ -86,7 +87,8 @@ export async function PATCH(
 
   await dbConnect();
   const { parkinglotId } = await context.params;
-  const body = await req.json().catch(() => ({}));
+  const rawBody: unknown = await req.json().catch(() => null);
+  const body = (rawBody && typeof rawBody === 'object') ? (rawBody as Record<string, unknown>) : {};
 
   const validationError = validateBillingProfile(body);
   if (validationError) {
@@ -101,23 +103,23 @@ export async function PATCH(
     {
       $set: {
         billingProfile: {
-          enabled: Boolean(body?.enabled ?? false),
-          businessName: String(body?.businessName ?? ''),
-          taxCondition: String(body?.taxCondition ?? 'consumidor_final'),
-          documentType: String(body?.documentType ?? 'cuit'),
-          documentNumber: String(body?.documentNumber ?? ''),
-          pointOfSale: String(body?.pointOfSale ?? ''),
-          voucherTypeDefault: String(body?.voucherTypeDefault ?? 'consumidor_final'),
-          iibb: String(body?.iibb ?? ''),
-          address: String(body?.address ?? ''),
-          city: String(body?.city ?? ''),
-          email: String(body?.email ?? ''),
-          phone: String(body?.phone ?? ''),
+          enabled: Boolean(body.enabled ?? false),
+          businessName: String(body.businessName ?? ''),
+          taxCondition: String(body.taxCondition ?? 'consumidor_final'),
+          documentType: String(body.documentType ?? 'cuit'),
+          documentNumber: String(body.documentNumber ?? ''),
+          pointOfSale: String(body.pointOfSale ?? ''),
+          voucherTypeDefault: String(body.voucherTypeDefault ?? 'consumidor_final'),
+          iibb: String(body.iibb ?? ''),
+          address: String(body.address ?? ''),
+          city: String(body.city ?? ''),
+          email: String(body.email ?? ''),
+          phone: String(body.phone ?? ''),
         },
       },
     },
     { new: true },
-  ).lean();
+  ).lean<Record<string, unknown> | null>();
 
   if (!updated) {
     return NextResponse.json({ error: 'Playa no encontrada' }, { status: 404 });
@@ -125,8 +127,8 @@ export async function PATCH(
 
   return NextResponse.json({
     ok: true,
-    parkinglotId: String((updated as any)._id),
-    parkingName: String((updated as any).name ?? ''),
-    billingProfile: (updated as any).billingProfile ?? {},
+    parkinglotId: String(updated._id),
+    parkingName: String(updated.name ?? ''),
+    billingProfile: updated.billingProfile ?? {},
   }, { status: 200 });
 }

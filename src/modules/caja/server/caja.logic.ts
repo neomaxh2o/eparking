@@ -25,6 +25,20 @@ const METODOS_PAGO_VALIDOS = ['efectivo', 'tarjeta', 'qr', 'otros'] as const;
 
 type MetodoPago = (typeof METODOS_PAGO_VALIDOS)[number];
 
+type TarifaSnapshotAplicada = {
+  _id?: string;
+  nombre?: string;
+  tarifaHora?: number;
+  tarifaDia?: number;
+  tarifaLibre?: number;
+  tarifaBaseHora?: number;
+  fraccionMinutos?: number;
+  tipoEstadiaAplicada?: 'hora' | 'dia' | 'libre';
+  cantidadAplicada?: number;
+  precioUnitarioAplicado?: number;
+  precioTotalAplicado?: number;
+};
+
 type CloseEstadiaInput = {
   ticketNumber: string;
   metodoPago?: string;
@@ -101,15 +115,7 @@ export async function registrarIngreso(payload: {
 
   const tarifaId = String((tarifaDoc as { _id?: unknown })._id ?? payload.tarifaId ?? '');
 
-  let tarifaSnapshot: {
-    _id?: string;
-    nombre?: string;
-    tarifaHora?: number;
-    tarifaDia?: number;
-    tarifaLibre?: number;
-    tarifaBaseHora?: number;
-    fraccionMinutos?: number;
-  } | undefined;
+  let tarifaSnapshot: TarifaSnapshotAplicada | undefined;
 
   if (tipoEstadia === 'hora') {
     const tarifasHora = [...(((tarifaDoc as { tarifasHora?: Array<{ cantidad?: number; precioUnitario?: number; precioTotal?: number; precioConDescuento?: number }> }).tarifasHora) ?? [])]
@@ -256,13 +262,29 @@ async function upsertTurnoTicket(operatorId: string, ticketObj: ITicket, totalCo
   }
 
   const ticketIndex = turno.tickets.findIndex((t: ITicket) => t.ticketNumber === ticketObj.ticketNumber);
+  const toAmount = (t: ITicket | typeof ticketObj) => {
+    // Use actual collected amount when present;
+    // otherwise derive expected amount from tarifa snapshot fields (precioTotalAplicado, tarifaHora*qty, tarifaBaseHora*qty)
+    const collected = Number(t.totalCobrado ?? 0);
+    if (collected > 0) return collected;
+
+    const tarifa = (t as any).tarifa || {};
+    const qty = Number((t as any).cantidad ?? (t as any).cantidadHoras ?? 1);
+
+    if (typeof tarifa.precioTotalAplicado === 'number' && tarifa.precioTotalAplicado > 0) return Number(tarifa.precioTotalAplicado);
+    if (typeof tarifa.tarifaHora === 'number' && tarifa.tarifaHora > 0) return Number(tarifa.tarifaHora) * Math.max(1, qty);
+    if (typeof tarifa.tarifaBaseHora === 'number' && tarifa.tarifaBaseHora > 0) return Number(tarifa.tarifaBaseHora) * Math.max(1, qty);
+
+    return 0;
+  };
+
   if (ticketIndex >= 0) {
     const ticketPrevio = turno.tickets[ticketIndex];
-    turno.totalTurno = turno.totalTurno - (ticketPrevio.totalCobrado ?? 0) + totalCobrado;
+    turno.totalTurno = turno.totalTurno - toAmount(ticketPrevio) + toAmount(ticketObj);
     turno.tickets[ticketIndex] = ticketObj;
   } else {
     turno.tickets.push(ticketObj);
-    turno.totalTurno += totalCobrado;
+    turno.totalTurno += toAmount(ticketObj);
   }
 
   await turno.save();
@@ -461,6 +483,9 @@ export async function modificarTicket(
       fraccionMinutos?: number;
     };
     prepago: boolean;
+    cantidad: number;
+    cantidadHoras: number;
+    cantidadDias: number;
   }>,
 ) {
   return updateTicket(ticketNumber, {

@@ -1,10 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import Turno from '@/models/Turno';
 import User from '@/models/User';
 import Ticket from '@/models/Ticket';
 import Estadia from '@/models/Estadia';
 import { calculateExpirationDate } from '@/lib/estadia/time';
+import { toClientTurno } from '@/lib/serializers';
+import type { TurnoDoc } from '@/lib/types/documents';
 
 function toIso(value?: Date | string | null) {
   if (!value) return undefined;
@@ -12,7 +14,7 @@ function toIso(value?: Date | string | null) {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   await dbConnect();
 
   try {
@@ -20,13 +22,14 @@ export async function GET(req: Request) {
     const operatorId = url.searchParams.get('operatorId');
     if (!operatorId) return NextResponse.json({ error: 'Falta operatorId' }, { status: 400 });
 
-    const turno = await Turno.findOne({ operatorId, estado: 'abierto' }).lean();
-    if (!turno) return NextResponse.json(null);
+    const turnoRaw = await Turno.findOne({ operatorId, estado: 'abierto' }).lean<TurnoDoc>();
+    if (!turnoRaw) return NextResponse.json(null);
+    const turno = toClientTurno(turnoRaw);
 
     let operatorName = typeof turno.operatorName === 'string' ? turno.operatorName.trim() : '';
 
     if (!operatorName) {
-      const operator = await User.findById(operatorId).select('name nombre apellido').lean();
+      const operator = await User.findById(operatorId).select('name nombre apellido').lean<Record<string, unknown> | null>();
       if (operator) {
         const user = operator as Record<string, unknown>;
         operatorName =
@@ -38,37 +41,37 @@ export async function GET(req: Request) {
       }
     }
 
-    const ticketsDocs = await Ticket.find({ turnoId: turno._id }).sort({ createdAt: -1 }).lean();
-    const estadiasDocs = await Estadia.find({ operadorId: operatorId }).sort({ createdAt: -1 }).lean();
-    const estadiasByTicket = new Map(estadiasDocs.map((estadia) => [String(estadia.ticket), estadia]));
+    const ticketsDocs = await Ticket.find({ turnoId: turno._id }).sort({ createdAt: -1 }).lean<Record<string, unknown>[]>();
+    const estadiasDocs = await Estadia.find({ operadorId: operatorId }).sort({ createdAt: -1 }).lean<Record<string, unknown>[]>();
+    const estadiasByTicket = new Map(estadiasDocs.map((estadia) => [String((estadia as any).ticket), estadia]));
 
     const tickets = ticketsDocs.map((ticket) => {
-      const estadia = estadiasByTicket.get(String(ticket.ticketNumber));
+      const estadia = estadiasByTicket.get(String((ticket as any).ticketNumber));
       const horaExpiracion =
-        estadia?.horaExpiracion ??
+        (estadia as any)?.horaExpiracion ??
         calculateExpirationDate({
-          tipoEstadia: (estadia?.tipoEstadia ?? ticket.tipoEstadia) as 'hora' | 'dia' | 'libre' | 'mensual',
-          horaEntrada: estadia?.horaEntrada ?? ticket.horaEntrada,
-          cantidadHoras: estadia?.cantidadHoras ?? ticket.cantidadHoras,
-          cantidadDias: estadia?.cantidadDias ?? ticket.cantidadDias,
-          cantidadMeses: estadia?.cantidadMeses,
+          tipoEstadia: ((estadia as any)?.tipoEstadia ?? (ticket as any).tipoEstadia) as 'hora' | 'dia' | 'libre' | 'mensual',
+          horaEntrada: (estadia as any)?.horaEntrada ?? (ticket as any).horaEntrada,
+          cantidadHoras: (estadia as any)?.cantidadHoras ?? (ticket as any).cantidadHoras,
+          cantidadDias: (estadia as any)?.cantidadDias ?? (ticket as any).cantidadDias,
+          cantidadMeses: (estadia as any)?.cantidadMeses,
         });
 
       return {
-        _id: String(ticket._id),
-        ticketNumber: String(ticket.ticketNumber ?? ''),
-        patente: String(estadia?.patente ?? ticket.patente ?? ''),
-        horaEntrada: toIso(estadia?.horaEntrada ?? ticket.horaEntrada),
-        horaSalida: toIso(estadia?.horaSalida ?? ticket.horaSalida),
+        _id: String((ticket as any)._id),
+        ticketNumber: String((ticket as any).ticketNumber ?? ''),
+        patente: String((estadia as any)?.patente ?? (ticket as any).patente ?? ''),
+        horaEntrada: toIso((estadia as any)?.horaEntrada ?? (ticket as any).horaEntrada),
+        horaSalida: toIso((estadia as any)?.horaSalida ?? (ticket as any).horaSalida),
         horaExpiracion: toIso(horaExpiracion),
-        totalCobrado: Number(estadia?.totalCobrado ?? ticket.totalCobrado ?? 0),
-        tipoEstadia: String(estadia?.tipoEstadia ?? ticket.tipoEstadia ?? 'hora'),
-        estado: String(estadia?.estado === 'cerrada' ? 'cerrada' : ticket.estado ?? 'activa'),
-        metodoPago: estadia?.metodoPago ?? ticket.metodoPago,
-        prepago: Boolean(estadia?.prepago ?? ticket.prepago ?? false),
-        categoria: estadia?.categoria ?? ticket.categoria,
-        createdAt: toIso(estadia?.createdAt ?? ticket.createdAt),
-        updatedAt: toIso(estadia?.updatedAt ?? ticket.updatedAt),
+        totalCobrado: Number((estadia as any)?.totalCobrado ?? (ticket as any).totalCobrado ?? 0),
+        tipoEstadia: String((estadia as any)?.tipoEstadia ?? (ticket as any).tipoEstadia ?? 'hora'),
+        estado: String((estadia as any)?.estado === 'cerrada' ? 'cerrada' : (ticket as any).estado ?? 'activa'),
+        metodoPago: (estadia as any)?.metodoPago ?? (ticket as any).metodoPago,
+        prepago: Boolean((estadia as any)?.prepago ?? (ticket as any).prepago ?? false),
+        categoria: (estadia as any)?.categoria ?? (ticket as any).categoria,
+        createdAt: toIso((estadia as any)?.createdAt ?? (ticket as any).createdAt),
+        updatedAt: toIso((estadia as any)?.updatedAt ?? (ticket as any).updatedAt),
       };
     });
 
