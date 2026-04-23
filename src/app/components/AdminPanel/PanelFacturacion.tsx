@@ -1,42 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import OpenTurnoWidget from './OpenTurnoWidget';
-import FinancialOperationsMock from './FinancialOperationsMock';
 import { Tab } from '@headlessui/react';
 import BillingDocumentsList from '@/modules/billing/components/BillingDocumentsList';
-import ParkingBillingProfileQuickEditor from '@/modules/billing/components/ParkingBillingProfileQuickEditor';
 import type { BillingDocument } from '@/modules/billing/types/billing.types';
-import BillingControls from './BillingControls';
-import { useOwnerOperations } from '@/app/components/AdminPanel/OwnerOperationsContext';
-import {
-  fetchCajasDisponibles as sharedFetchCajasDisponibles,
-  resolveCajaFallback as sharedResolveCajaFallback,
-  toCents as sharedToCents,
-  fromCents as sharedFromCents,
-  logger as sharedLogger,
-} from '@/modules/turnos/shared/index';
-
+import PanelAbonados from '@/app/components/AdminPanel/PanelAbonados';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
 export default function PanelFacturacion() {
-  const ownerOperations = useOwnerOperations();
-  const OPERATIONS_ENABLED = (typeof process !== 'undefined' && process?.env?.NEXT_PUBLIC_ADMIN_OPERATIONS_ENABLED === 'true') || Boolean(ownerOperations);
-  if (!OPERATIONS_ENABLED) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-700">
-          <h3 className="text-lg font-bold">Abrir turno</h3>
-          <p className="mt-2 text-sm text-gray-500">La sección operativa principal está deshabilitada. Usá el formulario de abajo para abrir un turno.</p>
-        </div>
-        <OpenTurnoWidget />
-        <FinancialOperationsMock />
-      </div>
-    );
-  }
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
   const [parkings, setParkings] = useState<any[]>([]);
   const [loadingParkings, setLoadingParkings] = useState(true);
@@ -55,12 +29,6 @@ export default function PanelFacturacion() {
   const [paymentReference, setPaymentReference] = useState('');
   const [reconcileSummary, setReconcileSummary] = useState<any | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const publishStatus = (type: 'success' | 'error' | 'info', text: string | null) => {
-    if (ownerOperations?.setStatusMessage) {
-      ownerOperations.setStatusMessage(text ? { type, text } : null);
-    }
-    setMessage(text);
-  };
   const [closureMessage, setClosureMessage] = useState<string | null>(null);
   const [selectedClosure, setSelectedClosure] = useState<any | null>(null);
   const [parkinglotId, setParkinglotId] = useState('');
@@ -69,12 +37,7 @@ export default function PanelFacturacion() {
   const [closureTo, setClosureTo] = useState('');
   const [cajasDisponibles, setCajasDisponibles] = useState<Array<{ numero: number }>>([]);
   const [selectedParkingBillingProfile, setSelectedParkingBillingProfile] = useState<any | null>(null);
-  const [loadingParkingBillingProfile, setLoadingParkingBillingProfile] = useState(false);
-  const [isQuickFiscalEditorOpen, setIsQuickFiscalEditorOpen] = useState(false);
-  const activeAdminCashTurnoId = String(ownerOperations?.operationalSnapshot?.activeTurnoId ?? '').trim();
-  const activeAdminCashParkingId = String(ownerOperations?.operationalSnapshot?.activeParkingId ?? '').trim();
-  const ownerSelectedParkingId = String(ownerOperations?.selectedParkingId ?? '').trim();
-  const scopedParkinglotId = String(ownerSelectedParkingId || parkinglotId || '').trim();
+  const [adminCashTurno, setAdminCashTurno] = useState<any | null>(null);
 
   const fetchBillingDocuments = async () => {
     try {
@@ -82,7 +45,7 @@ export default function PanelFacturacion() {
       setError(null);
       const params = new URLSearchParams();
       if (invoiceSourceFilter) params.set('sourceType', invoiceSourceFilter);
-      if (scopedParkinglotId) params.set('parkinglotId', scopedParkinglotId);
+      if (parkinglotId) params.set('parkinglotId', parkinglotId);
       const res = await fetch(`/api/v2/billing/documents${params.toString() ? `?${params.toString()}` : ''}`);
       const data = await res.json();
       setBillingDocuments(Array.isArray(data) ? (data as BillingDocument[]) : []);
@@ -106,12 +69,24 @@ export default function PanelFacturacion() {
     }
   };
 
+  const fetchAdminCashTurno = async (nextParkinglotId?: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (nextParkinglotId) params.set('parkinglotId', nextParkinglotId);
+      const res = await fetch(`/api/v2/billing/admin-cash${params.toString() ? `?${params.toString()}` : ''}`);
+      const data = await res.json();
+      setAdminCashTurno(data?.turno ?? null);
+    } catch {
+      setAdminCashTurno(null);
+    }
+  };
+
   const fetchClosures = async () => {
     try {
       setLoadingClosures(true);
       const params = new URLSearchParams();
       params.set('type', 'zeta');
-      if (scopedParkinglotId) params.set('parkinglotId', scopedParkinglotId);
+      if (parkinglotId) params.set('parkinglotId', parkinglotId);
       if (cajaNumero) params.set('cajaNumero', cajaNumero);
       const res = await fetch(`/api/v2/billing/closures?${params.toString()}`);
       const data = await res.json();
@@ -125,14 +100,14 @@ export default function PanelFacturacion() {
 
   const fetchCajasDisponibles = async (nextParkinglotId?: string) => {
     try {
-      const arr = await sharedFetchCajasDisponibles(nextParkinglotId);
-      setCajasDisponibles(Array.isArray(arr) ? arr : []);
-      // Auto-select first caja if none selected
-      if (Array.isArray(arr) && arr.length > 0 && !cajaNumero) {
-        setCajaNumero(String(arr[0].numero));
-      }
-    } catch (e) {
-      ( (sharedLogger && typeof sharedLogger.debug === 'function') ? sharedLogger.debug : console.debug)('fetchCajasDisponibles:error', e);
+      const params = new URLSearchParams();
+      if (nextParkinglotId) params.set('parkinglotId', nextParkinglotId);
+      const res = await fetch(`/api/v2/billing/cajas?${params.toString()}`);
+      const data = await res.json();
+      const arr = Array.isArray(data) ? data : [];
+      setCajasDisponibles(arr);
+      if (arr.length > 0 && !cajaNumero) setCajaNumero(String(arr[0].numero));
+    } catch {
       setCajasDisponibles([]);
     }
   };
@@ -144,46 +119,29 @@ export default function PanelFacturacion() {
     }
 
     try {
-      setLoadingParkingBillingProfile(true);
       const res = await fetch(`/api/v2/billing/parkings/${nextParkinglotId}/profile`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo cargar el perfil fiscal de la playa');
       setSelectedParkingBillingProfile(data.billingProfile ?? null);
     } catch {
       setSelectedParkingBillingProfile(null);
-    } finally {
-      setLoadingParkingBillingProfile(false);
     }
   };
 
   useEffect(() => {
-    void fetchBillingDocuments();
-    void fetchClosures();
-    void fetchCajasDisponibles();
     void fetchBillingParkings();
-  }, [invoiceSourceFilter, scopedParkinglotId]);
+  }, []);
 
   useEffect(() => {
-    if (ownerSelectedParkingId && ownerSelectedParkingId !== parkinglotId) {
-      setParkinglotId(ownerSelectedParkingId);
-      return;
-    }
-    void fetchCajasDisponibles(scopedParkinglotId || undefined);
-    void fetchSelectedParkingBillingProfile(scopedParkinglotId || undefined);
-  }, [parkinglotId, ownerSelectedParkingId, scopedParkinglotId]);
+    void fetchBillingDocuments();
+  }, [invoiceSourceFilter, parkinglotId]);
 
   useEffect(() => {
-    setParkinglotId(scopedParkinglotId);
-    setCajaNumero('');
-    setClosureFrom('');
-    setClosureTo('');
-    setSelectedClosure(null);
-    setClosureMessage(null);
-    setSelectedParkingBillingProfile(null);
-    setIsQuickFiscalEditorOpen(false);
-    setError(null);
-    publishStatus('info', null);
-  }, [scopedParkinglotId]);
+    void fetchCajasDisponibles(parkinglotId || undefined);
+    void fetchSelectedParkingBillingProfile(parkinglotId || undefined);
+    void fetchAdminCashTurno(parkinglotId || undefined);
+    void fetchClosures();
+  }, [parkinglotId]);
 
   const filteredBillingDocuments = useMemo(() => {
     return billingDocuments.filter((f) => {
@@ -194,11 +152,9 @@ export default function PanelFacturacion() {
       const matchesSource = !invoiceSourceFilter || (f.sourceType || 'abonado') === invoiceSourceFilter;
       const matchesFiscalSource = !fiscalSourceFilter || (f.fiscalSource || 'fallback') === fiscalSourceFilter;
       const matchesFiscalStatus = !fiscalStatusFilter || (f.fiscalStatus || 'invalid') === fiscalStatusFilter;
-      const documentAssignedParking = String((f.assignedParking ?? (f as any)?.snapshot?.parking?._id ?? '') || '').trim();
-      const matchesParking = !scopedParkinglotId || documentAssignedParking === scopedParkinglotId;
-      return matchesSearch && matchesEstado && matchesTipo && matchesSource && matchesFiscalSource && matchesFiscalStatus && matchesParking;
+      return matchesSearch && matchesEstado && matchesTipo && matchesSource && matchesFiscalSource && matchesFiscalStatus;
     });
-  }, [billingDocuments, invoiceSearch, invoiceStatusFilter, invoiceTypeFilter, invoiceSourceFilter, fiscalSourceFilter, fiscalStatusFilter, scopedParkinglotId]);
+  }, [billingDocuments, invoiceSearch, invoiceStatusFilter, invoiceTypeFilter, invoiceSourceFilter, fiscalSourceFilter, fiscalStatusFilter]);
 
   const billingDocumentsByPeriod = useMemo(() => {
     return filteredBillingDocuments.reduce((acc, billingDocument) => {
@@ -208,8 +164,6 @@ export default function PanelFacturacion() {
       return acc;
     }, {} as Record<string, BillingDocument[]>);
   }, [filteredBillingDocuments]);
-
-  const parkingsFacturacion = useMemo(() => parkings, [parkings]);
 
   const executiveSummary = useMemo(() => {
     return filteredBillingDocuments.reduce((acc, billingDocument) => {
@@ -222,25 +176,35 @@ export default function PanelFacturacion() {
     }, { totalFacturado: 0, totalPagado: 0, totalVencido: 0, totalDeuda: 0 });
   }, [filteredBillingDocuments]);
 
+  const pendingDocuments = useMemo(
+    () => filteredBillingDocuments.filter((d) => d.estado === 'emitida' || d.estado === 'pendiente' || d.estado === 'vencida').slice(0, 8),
+    [filteredBillingDocuments],
+  );
+
+  const recentCollections = useMemo(
+    () => filteredBillingDocuments.filter((d) => d.estado === 'pagada').sort((a, b) => new Date(String(b.fechaPago || 0)).getTime() - new Date(String(a.fechaPago || 0)).getTime()).slice(0, 8),
+    [filteredBillingDocuments],
+  );
+
   const hasValidSelectedParkingBillingProfile = useMemo(() => {
-    if (!scopedParkinglotId) return true;
+    if (!parkinglotId) return true;
     return Boolean(
       selectedParkingBillingProfile?.enabled &&
       String(selectedParkingBillingProfile?.businessName ?? '').trim() &&
       String(selectedParkingBillingProfile?.documentNumber ?? '').trim() &&
       String(selectedParkingBillingProfile?.pointOfSale ?? '').trim(),
     );
-  }, [scopedParkinglotId, selectedParkingBillingProfile]);
+  }, [parkinglotId, selectedParkingBillingProfile]);
 
   const runFinancialControl = async () => {
     try {
       setError(null);
-      publishStatus('info', null);
+      setMessage(null);
       const res = await fetch('/api/v2/abonados/financial/run', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo ejecutar el control financiero');
       setFinancialRunSummary(data);
-      publishStatus('success', 'Control financiero ejecutado correctamente.');
+      setMessage('Control financiero ejecutado correctamente.');
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -250,7 +214,7 @@ export default function PanelFacturacion() {
   const reconcilePaymentReference = async () => {
     try {
       setError(null);
-      publishStatus('info', null);
+      setMessage(null);
       setReconcileSummary(null);
       if (!paymentReference.trim()) {
         setError('Debes ingresar una referencia de pago.');
@@ -264,7 +228,7 @@ export default function PanelFacturacion() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo conciliar el pago');
       setReconcileSummary(data);
-      publishStatus('success', 'Conciliación de pago ejecutada correctamente.');
+      setMessage('Conciliación de pago ejecutada correctamente.');
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -274,23 +238,15 @@ export default function PanelFacturacion() {
   const marcarDocumento = async (documentId: string, estado: 'pagada' | 'vencida' | 'cancelada') => {
     try {
       setError(null);
-      publishStatus('info', null);
-      if (estado === 'pagada') {
-        if (!activeAdminCashTurnoId) {
-          throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de marcar como pagada.');
-        }
-        if (scopedParkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== scopedParkinglotId) {
-          throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
-        }
-      }
+      setMessage(null);
       const res = await fetch(`/api/v2/billing/documents/${documentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado, ...(estado === 'pagada' ? { adminCashTurnoId: activeAdminCashTurnoId } : {}) }),
+        body: JSON.stringify({ estado }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la factura');
-      publishStatus('success', `Factura actualizada a ${estado}.`);
+      setMessage(`Factura actualizada a ${estado}.`);
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -300,19 +256,16 @@ export default function PanelFacturacion() {
   const acreditarDocumento = async (documentId: string) => {
     try {
       setError(null);
-      publishStatus('info', null);
-      if (!activeAdminCashTurnoId) {
-        throw new Error('Debes abrir o seleccionar un turno administrativo activo antes de acreditar pagos.');
-      }
-      if (scopedParkinglotId && activeAdminCashParkingId && activeAdminCashParkingId !== scopedParkinglotId) {
-        throw new Error('El turno administrativo activo no corresponde a la playa seleccionada.');
-      }
+      setMessage(null);
+      if (!adminCashTurno?._id) throw new Error('Debes abrir una caja administrativa desde Flujo Operativo antes de acreditar cobros manuales.');
       const res = await fetch(`/api/v2/billing/documents/${documentId}/acreditar`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: activeAdminCashTurnoId }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentProvider: 'electronic', paymentMethod: 'electronic', adminCashTurnoId: adminCashTurno._id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo acreditar el pago');
-      publishStatus('success', 'Pago acreditado automáticamente.');
+      setMessage('Pago acreditado automáticamente.');
       await fetchBillingDocuments();
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
@@ -356,7 +309,7 @@ export default function PanelFacturacion() {
   };
 
   useEffect(() => {
-    publishStatus('info', null);
+    setMessage(null);
     setError(null);
     setClosureMessage(null);
     setReconcileSummary(null);
@@ -374,25 +327,20 @@ export default function PanelFacturacion() {
       </div>
 
       <div className="dashboard-section p-5 md:p-6 space-y-4">
-        <Tab.Group selectedIndex={selectedTabIndex} onChange={(i)=>{
-            const cajaIndex = 4; // Documentos=0, Fiscal=1, Cierres=2, Control=3, Caja admin=4
-            if (i !== cajaIndex) {
-              // require parking selected and that turno corresponds to selected parking
-            }
-            setSelectedTabIndex(i);
-          }}>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Facturación</h2>
+          <p className="mt-1 text-sm text-gray-500">Backoffice comercial consolidado. Tabs canónicas: Facturas, Abonados, Conciliación y Cierres.</p>
+        </div>
+
+        <Tab.Group selectedIndex={selectedTabIndex} onChange={setSelectedTabIndex}>
           <Tab.List className="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
-            {['Facturas', 'Fiscal', 'Cierres', 'Conciliación', 'Caja activa'].map((tab) => (
+            {['Facturas', 'Abonados', 'Conciliación', 'Cierres'].map((tab) => (
               <Tab
                 key={tab}
-                className={({ selected }) =>
-                  classNames(
-                    'inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition',
-                    selected
-                      ? 'border-gray-300 bg-gray-200 text-gray-800'
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
-                  )
-                }
+                className={({ selected }) => classNames(
+                  'inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition',
+                  selected ? 'border-gray-300 bg-gray-200 text-gray-800' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+                )}
               >
                 {tab}
               </Tab>
@@ -400,9 +348,13 @@ export default function PanelFacturacion() {
           </Tab.List>
 
           <Tab.Panels className="mt-6 space-y-6">
-            <Tab.Panel className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                <input value={invoiceSearch} onChange={(e) => setInvoiceSearch(e.target.value)} placeholder="Buscar por abonado, ticket, patente, código, referencia o período" className="rounded-xl border border-gray-300 px-4 py-3" />
+            <Tab.Panel className="space-y-5">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4 xl:grid-cols-7">
+                <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
+                  <option value="">Todas las playas</option>
+                  {parkings.map((parking) => <option key={parking._id} value={parking._id}>{parking.name}</option>)}
+                </select>
+                <input value={invoiceSearch} onChange={(e) => setInvoiceSearch(e.target.value)} placeholder="Buscar por abonado, ticket, patente, código o referencia" className="rounded-xl border border-gray-300 px-4 py-3" />
                 <select value={invoiceStatusFilter} onChange={(e) => setInvoiceStatusFilter(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3"><option value="">Todos los estados</option><option value="emitida">Emitida</option><option value="pendiente">Pendiente</option><option value="pagada">Pagada</option><option value="vencida">Vencida</option><option value="cancelada">Cancelada</option></select>
                 <select value={invoiceTypeFilter} onChange={(e) => setInvoiceTypeFilter(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3"><option value="">Todos los tipos</option><option value="mensual">Mensual</option><option value="diaria">Diaria</option><option value="hora">Por hora</option></select>
                 <select value={invoiceSourceFilter} onChange={(e) => setInvoiceSourceFilter(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3"><option value="">Todos los orígenes</option><option value="abonado">Abonados</option><option value="ticket">Tickets</option></select>
@@ -410,86 +362,86 @@ export default function PanelFacturacion() {
                 <select value={fiscalStatusFilter} onChange={(e) => setFiscalStatusFilter(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3"><option value="">Todo estado fiscal</option><option value="valid">Válido</option><option value="fallback">Fallback</option><option value="invalid">Inválido</option></select>
               </div>
 
-              {loading ? <p className="text-sm text-gray-500">Cargando documentos...</p> : null}
-              {!filteredBillingDocuments.length ? (
-                <p className="text-sm text-gray-500">No hay documentos para la playa activa con los filtros actuales.</p>
-              ) : (
-                <BillingControls>
-                  <BillingDocumentsList
-                    billingDocumentsByPeriod={billingDocumentsByPeriod}
-                    acreditarDocumento={acreditarDocumento}
-                    marcarDocumento={marcarDocumento}
-                  />
-                </BillingControls>
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                  <h3 className="text-lg font-bold text-gray-900">Documentos pendientes / vencidos</h3>
+                  {!pendingDocuments.length ? <p className="text-sm text-gray-500">No hay documentos pendientes para los filtros seleccionados.</p> : pendingDocuments.map((doc) => (
+                    <div key={doc._id} className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                      <p><strong>Código:</strong> {doc.invoiceCode || '-'}</p>
+                      <p><strong>Entidad:</strong> {doc.displayLabel || '-'}</p>
+                      <p><strong>Estado:</strong> {doc.estado || '-'}</p>
+                      <p><strong>Monto:</strong> ${Number(doc.monto || 0).toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+                  <h3 className="text-lg font-bold text-gray-900">Últimas cobranzas</h3>
+                  {!recentCollections.length ? <p className="text-sm text-gray-500">No hay cobranzas registradas para el filtro actual.</p> : recentCollections.map((doc) => (
+                    <div key={doc._id} className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                      <p><strong>Código:</strong> {doc.invoiceCode || '-'}</p>
+                      <p><strong>Monto:</strong> ${Number(doc.monto || 0).toFixed(2)}</p>
+                      <p><strong>Método:</strong> {doc.paymentMethod || '-'}</p>
+                      <p><strong>Fecha pago:</strong> {doc.fechaPago ? new Date(String(doc.fechaPago)).toLocaleString() : '-'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
+                La configuración fiscal ya no vive acá. Su ubicación canónica es <strong>Infraestructura → Playas → Configuración fiscal</strong>.
+              </div>
+
+              {message ? <p className="text-sm text-green-700">{message}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {loading ? <p className="text-sm text-gray-500">Cargando documentos billing...</p> : null}
+              {!filteredBillingDocuments.length ? <p className="text-sm text-gray-500">No hay documentos billing para los filtros seleccionados.</p> : (
+                <BillingDocumentsList billingDocumentsByPeriod={billingDocumentsByPeriod} acreditarDocumento={acreditarDocumento} marcarDocumento={marcarDocumento} />
               )}
             </Tab.Panel>
 
+            <Tab.Panel>
+              <PanelAbonados />
+            </Tab.Panel>
+
             <Tab.Panel className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
-                  <option value="">Seleccionar playa activa para perfil fiscal</option>
-                  {parkingsFacturacion.map((parking) => (
-                    <option key={parking._id} value={parking._id}>{parking.name}</option>
-                  ))}
-                </select>
-                {parkinglotId ? (
-                  <button onClick={() => setIsQuickFiscalEditorOpen(true)} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">
-                    Editar perfil fiscal
-                  </button>
-                ) : null}
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Conciliación</h2>
+                  <p className="mt-1 text-sm text-gray-500">Pago por referencia y control financiero automático del módulo billing.</p>
+                </div>
+                <button onClick={() => void runFinancialControl()} className="rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300">Ejecutar control financiero</button>
               </div>
 
-              {loadingParkingBillingProfile ? (
-                <p className="text-xs text-gray-500">Cargando perfil fiscal de la playa...</p>
-              ) : selectedParkingBillingProfile ? (
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 space-y-3">
-                  <p className="font-semibold">Perfil fiscal de la playa activa</p>
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                    <p><strong>Habilitado:</strong> {selectedParkingBillingProfile.enabled ? 'Sí' : 'No'}</p>
-                    <p><strong>Razón social:</strong> {selectedParkingBillingProfile.businessName || '-'}</p>
-                    <p><strong>Condición fiscal:</strong> {selectedParkingBillingProfile.taxCondition || '-'}</p>
-                    <p><strong>Documento:</strong> {selectedParkingBillingProfile.documentType || '-'} {selectedParkingBillingProfile.documentNumber || ''}</p>
-                    <p><strong>Punto de venta:</strong> {selectedParkingBillingProfile.pointOfSale || '-'}</p>
-                    <p><strong>Comprobante default:</strong> {selectedParkingBillingProfile.voucherTypeDefault || '-'}</p>
-                  </div>
-                </div>
-              ) : parkinglotId ? (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 space-y-3">
-                  <p>La playa activa no tiene perfil fiscal configurado.</p>
-                  <button onClick={() => setIsQuickFiscalEditorOpen(true)} className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">
-                    Configurar perfil fiscal
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Selecciona una playa activa para consultar o editar su perfil fiscal de facturación.</p>
-              )}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+                <input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Referencia de pago electrónico" className="rounded-xl border border-gray-300 px-4 py-3" />
+                <button onClick={() => void reconcilePaymentReference()} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">Conciliar pago</button>
+              </div>
+
+              {message ? <p className="text-sm text-green-700">{message}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {reconcileSummary ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><p><strong>Referencia conciliada:</strong> {reconcileSummary.paymentReference || '-'}</p><p><strong>Facturas actualizadas:</strong> {reconcileSummary.invoicesUpdated ?? 0}</p><p><strong>Abonados reactivados:</strong> {reconcileSummary.abonadosReactivated ?? 0}</p></div> : null}
+              {financialRunSummary ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700"><p><strong>Última ejecución:</strong> {financialRunSummary.timestamp ? new Date(financialRunSummary.timestamp).toLocaleString() : '-'}</p><p><strong>Facturas revisadas:</strong> {financialRunSummary.invoicesChecked ?? 0}</p><p><strong>Facturas marcadas vencidas:</strong> {financialRunSummary.invoicesMarkedOverdue ?? 0}</p><p><strong>Abonados suspendidos:</strong> {financialRunSummary.abonadosSuspended ?? 0}</p></div> : null}
             </Tab.Panel>
 
             <Tab.Panel className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
-                  <option value="">Playa activa</option>
-                  {parkingsFacturacion.map((parking) => (
-                    <option key={parking._id} value={parking._id}>{parking.name}</option>
-                  ))}
+                  <option value="">Todas las playas permitidas</option>
+                  {parkings.map((parking) => <option key={parking._id} value={parking._id}>{parking.name}</option>)}
                 </select>
                 <select value={cajaNumero} onChange={(e) => setCajaNumero(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3">
                   <option value="">Todas las cajas</option>
-                  {cajasDisponibles.map((caja) => (
-                    <option key={caja.numero} value={String(caja.numero)}>Caja {caja.numero}</option>
-                  ))}
+                  {cajasDisponibles.map((caja) => <option key={caja.numero} value={String(caja.numero)}>Caja {caja.numero}</option>)}
                 </select>
                 <input type="date" value={closureFrom} onChange={(e) => setClosureFrom(e.target.value)} className="rounded-xl border border-gray-300 px-4 py-3" />
                 <input type="date" value={closureTo} onChange={(e) => setClosureTo(e.target.value)} className="rounded-xl border border-gray-300 px-4 py-3" />
               </div>
-              <p className="text-xs text-gray-500">Owner solo puede ejecutar cierres sobre playas propias. Operator queda atado a su playa asignada y no está habilitado para cierre Z.</p>
+              <p className="text-xs text-gray-500">Owner solo puede ejecutar cierres sobre playas propias. La configuración fiscal válida se administra en Infraestructura → Playas.</p>
 
-              {!hasValidSelectedParkingBillingProfile && scopedParkinglotId ? (
+              {!hasValidSelectedParkingBillingProfile && parkinglotId ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 space-y-3">
-                  <p>No se puede ejecutar cierre Z hasta que la playa activa tenga un perfil fiscal válido y habilitado.</p>
-                  <button onClick={() => setIsQuickFiscalEditorOpen(true)} className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100">
-                    Editar perfil fiscal
-                  </button>
+                  <p>No se puede ejecutar cierre Z hasta que la playa seleccionada tenga un perfil fiscal válido y habilitado.</p>
+                  <p className="font-semibold">Ir a Infraestructura → Playas → Configuración fiscal.</p>
                 </div>
               ) : null}
 
@@ -499,6 +451,7 @@ export default function PanelFacturacion() {
               </div>
 
               {closureMessage ? <p className="text-sm text-green-700">{closureMessage}</p> : null}
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
               {loadingClosures ? <p className="text-sm text-gray-500">Cargando cierres fiscales...</p> : null}
               {!closures.length ? <p className="text-sm text-gray-500">No hay cierres fiscales registrados para los filtros seleccionados.</p> : (
                 <div className="space-y-3">
@@ -544,120 +497,12 @@ export default function PanelFacturacion() {
                   <p><strong>Tarjeta:</strong> ${Number(selectedClosure?.totals?.tarjeta ?? 0).toFixed(2)}</p>
                   <p><strong>QR:</strong> ${Number(selectedClosure?.totals?.qr ?? 0).toFixed(2)}</p>
                   <p><strong>Otros:</strong> ${Number(selectedClosure?.totals?.otros ?? 0).toFixed(2)}</p>
-                  <p><strong>Documentos:</strong> {selectedClosure?.totals?.documentsCount ?? 0}</p>
-                  <p><strong>Por tipo:</strong> {JSON.stringify(selectedClosure?.totals?.documentsByType ?? {})}</p>
-                  <p><strong>Documentos vinculados:</strong> {Array.isArray(selectedClosure?.linkedDocumentIds) ? selectedClosure.linkedDocumentIds.length : 0}</p>
-
-                  {Array.isArray(selectedClosure?.documents) && selectedClosure.documents.length > 0 ? (
-                    <div className="mt-4 space-y-3">
-                      <h5 className="text-sm font-bold text-gray-900">Documentos incluidos</h5>
-                      {selectedClosure.documents.map((doc: any) => (
-                        <div key={doc._id} className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                            <p><strong>ID:</strong> {doc._id}</p>
-                            <p><strong>Código:</strong> {doc.invoiceCode || '-'}</p>
-                            <p><strong>Comprobante:</strong> {doc.voucherType || '-'}</p>
-                            <p><strong>Tipo:</strong> {doc.tipoFacturacion || '-'}</p>
-                            <p><strong>Estado:</strong> {doc.estado || '-'}</p>
-                            <p><strong>Monto:</strong> ${Number(doc.monto || 0).toFixed(2)}</p>
-                            <p><strong>Origen fiscal:</strong> {doc?.snapshot?.fiscal?.source === 'parking' ? 'Fiscal playa' : doc?.snapshot?.fiscal?.source === 'user' ? 'Fallback user' : 'Sin perfil'}</p>
-                            <p><strong>Estado fiscal:</strong> {doc?.snapshot?.fiscal?.status === 'valid' ? 'Válido' : doc?.snapshot?.fiscal?.status === 'fallback' ? 'Fallback' : 'Inválido'}</p>
-                            <p><strong>Playa emisora:</strong> {doc?.snapshot?.parking?.name || '-'}</p>
-                            <p><strong>Punto de venta:</strong> {doc?.snapshot?.parking?.billingProfile?.pointOfSale || doc?.pointOfSale || '-'}</p>
-                            <p><strong>Empresa emisora:</strong> {doc?.snapshot?.parking?.billingProfile?.businessName || '-'}</p>
-                            <p><strong>Referencia:</strong> {doc.paymentReference || '-'}</p>
-                            <p><strong>Método:</strong> {doc.paymentMethod || '-'}</p>
-                            <p><strong>Abonado:</strong> {`${doc?.snapshot?.abonado?.nombre ?? ''} ${doc?.snapshot?.abonado?.apellido ?? ''}`.trim() || '-'}</p>
-                            <p><strong>Tarifa:</strong> {doc?.snapshot?.tarifaNombre || '-'}</p>
-                            <p><strong>Emitida:</strong> {doc.fechaEmision ? new Date(doc.fechaEmision).toLocaleString() : '-'}</p>
-                            <p><strong>Vence:</strong> {doc.fechaVencimiento ? new Date(doc.fechaVencimiento).toLocaleDateString() : '-'}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p><strong>Detalle documentos:</strong> no disponible.</p>
-                  )}
                 </div>
               ) : null}
-            </Tab.Panel>
-
-            <Tab.Panel className="space-y-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Control y conciliación</h2>
-                  <p className="mt-1 text-sm text-gray-500">Conciliación de pagos y control financiero dentro del contexto operativo activo.</p>
-                </div>
-                <button onClick={() => void runFinancialControl()} className="rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300">Ejecutar control financiero</button>
-              </div>
-
-              <BillingControls>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-                  <input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Referencia de pago electrónico" className="rounded-xl border border-gray-300 px-4 py-3" />
-                  <button onClick={() => void reconcilePaymentReference()} className="rounded-xl border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50">Conciliar pago</button>
-                </div>
-
-                {(!ownerOperations?.setStatusMessage && message) ? <p className="text-sm text-green-700">{message}</p> : null}
-                {error ? <p className="text-sm text-red-600">{error}</p> : null}
-                {reconcileSummary ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><p><strong>Referencia conciliada:</strong> {reconcileSummary.paymentReference || '-'}</p><p><strong>Facturas actualizadas:</strong> {reconcileSummary.invoicesUpdated ?? 0}</p><p><strong>Abonados reactivados:</strong> {reconcileSummary.abonadosReactivated ?? 0}</p></div> : null}
-                {financialRunSummary ? <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700"><p><strong>Última ejecución:</strong> {financialRunSummary.timestamp ? new Date(financialRunSummary.timestamp).toLocaleString() : '-'}</p><p><strong>Facturas revisadas:</strong> {financialRunSummary.invoicesChecked ?? 0}</p><p><strong>Facturas marcadas vencidas:</strong> {financialRunSummary.invoicesMarkedOverdue ?? 0}</p><p><strong>Abonados suspendidos:</strong> {financialRunSummary.abonadosSuspended ?? 0}</p></div> : null}
-              </BillingControls>
-            </Tab.Panel>
-
-            <Tab.Panel className="space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Caja activa</h2>
-                <p className="mt-1 text-sm text-gray-500">Referencia del contexto operativo actual para la playa seleccionada.</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <label htmlFor="admin-parking-select" className="sr-only">Playa</label>
-                  <select id="admin-parking-select" value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings}>
-                    <option value="">Seleccionar playa activa</option>
-                    {parkingsFacturacion.map((parking) => (
-                      <option key={parking._id} value={parking._id}>{parking.name}</option>
-                    ))}
-                  </select>
-
-                  <label htmlFor="admin-caja-select" className="sr-only">Caja</label>
-                  {cajasDisponibles.length > 0 ? (
-                    <select id="admin-caja-select" value={cajaNumero} onChange={(e) => setCajaNumero(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3">
-                      <option value="">Seleccionar caja</option>
-                      {cajasDisponibles.map((caja) => (
-                        <option key={caja.numero} value={String(caja.numero)}>Caja {caja.numero}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input id="admin-caja-select" type="number" min="1" placeholder="Ingresar núm. de caja" value={cajaNumero} onChange={(e) => setCajaNumero(e.target.value)} className="rounded-xl border border-gray-300 px-4 py-3" />
-                  )}
-                  <div />
-                </div>
-
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 space-y-2">
-                <p>El contexto operativo activo se gestiona desde el shell principal.</p>
-                <p><strong>Playa activa:</strong> {scopedParkinglotId || '-'}</p>
-                <p><strong>Caja seleccionada:</strong> {cajaNumero || '-'}</p>
-                <p className="text-xs text-gray-500">Las acciones de apertura y cierre se resuelven fuera de este módulo.</p>
-              </div>
-            </div>
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
       </div>
-
-      {parkinglotId ? (
-        <ParkingBillingProfileQuickEditor
-          parkinglotId={parkinglotId}
-          parkingName={parkingsFacturacion.find((parking) => String(parking._id) === String(parkinglotId))?.name}
-          open={isQuickFiscalEditorOpen}
-          onClose={() => setIsQuickFiscalEditorOpen(false)}
-          onSaved={(billingProfile) => {
-            setSelectedParkingBillingProfile(billingProfile);
-            setIsQuickFiscalEditorOpen(false);
-          }}
-        />
-      ) : null}
     </div>
   );
 }

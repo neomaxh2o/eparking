@@ -4,19 +4,15 @@ import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 import Tabs from '@/app/components/AdminPanel/Tabs';
-import PanelUsuarios from '@/app/components/AdminPanel/PanelUsuarios';
 import PanelPlayas from '@/app/components/AdminPanel/PanelPlayas';
-import PanelReservas from '@/app/components/AdminPanel/PanelReservas';
 import PanelTarifas from '@/app/components/AdminPanel/PanelTarifas';
-import PanelHistoricoCajas from '@/app/components/AdminPanel/PanelHistoricoCajas';
-import PanelAbonados from '@/app/components/AdminPanel/PanelAbonados';
 import PanelFacturacion from '@/app/components/AdminPanel/PanelFacturacion';
-import OwnerOperationsShell from '@/app/components/AdminPanel/OwnerOperationsShell';
-import { ClientsNavigationProvider } from '@/app/components/AdminPanel/ClientsNavigationContext';
+import PanelFlujoOperativo from '@/app/components/AdminPanel/PanelFlujoOperativo';
+import PanelControl from '@/app/components/AdminPanel/PanelControl';
 
 import type { TabKey, TabConfig } from '@/interfaces/admin';
 
-type AdminAreaKey = 'operacion' | 'clientes' | 'infraestructura';
+type AdminAreaKey = 'flujo-operativo' | 'facturacion' | 'control' | 'infraestructura';
 
 type AreaTabConfig = {
   key: TabKey;
@@ -30,8 +26,8 @@ function classNames(...classes: string[]) {
 
 export default function AdminPanel() {
   const { data: session, status } = useSession();
-  const [activeArea, setActiveArea] = useState<AdminAreaKey>('operacion');
-  const [activeTab, setActiveTab] = useState<TabKey>('facturacion');
+  const [activeArea, setActiveArea] = useState<AdminAreaKey>('flujo-operativo');
+  const [activeTab, setActiveTab] = useState<TabKey>('flujo-operativo');
 
   const userId = session?.user?.id ?? '';
   const userRole = session?.user?.role || 'user';
@@ -45,56 +41,26 @@ export default function AdminPanel() {
       : 'guest';
 
   const areaTabs = useMemo<Record<AdminAreaKey, AreaTabConfig[]>>(() => ({
-    operacion: userRole === 'owner'
-      ? [
-          { key: 'facturacion', label: 'Operaciones', content: <OwnerOperationsShell ownerId={userId} activeTab={activeTab} setActiveTab={setActiveTab} /> },
-        ]
-      : [
-          { key: 'facturacion', label: 'Abrir turno', content: <PanelFacturacion /> },
-          { key: 'reservations', label: 'Reservas', content: <PanelReservas /> },
-          ...(userRole === 'admin'
-            ? [{ key: 'historico-cajas' as const, label: 'Histórico de cajas', content: <PanelHistoricoCajas /> }]
-            : []),
-        ],
-    clientes: [
-      {
-        key: 'users',
-        label: 'Usuarios',
-        content: (
-          <ClientsNavigationProvider
-            goToUsers={() => setActiveTab('users')}
-            goToAbonados={() => setActiveTab('abonados')}
-          >
-            <PanelUsuarios />
-          </ClientsNavigationProvider>
-        ),
-      },
-      {
-        key: 'abonados',
-        label: 'Abonados',
-        content: (
-          <ClientsNavigationProvider
-            goToUsers={() => setActiveTab('users')}
-            goToAbonados={() => setActiveTab('abonados')}
-          >
-            <PanelAbonados />
-          </ClientsNavigationProvider>
-        ),
-      },
+    'flujo-operativo': [
+      { key: 'flujo-operativo', label: 'Flujo Operativo', content: <PanelFlujoOperativo /> },
+    ],
+    facturacion: [
+      { key: 'facturacion', label: 'Facturación', content: <PanelFacturacion /> },
+    ],
+    control: [
+      { key: 'control', label: 'Control', content: <PanelControl /> },
     ],
     infraestructura: [
       { key: 'parkings', label: 'Playas', content: <PanelPlayas ownerId={userId} userRole={panelUserRole} /> },
       { key: 'tarifas', label: 'Tarifas', content: <PanelTarifas userRole={tarifasUserRole} /> },
     ],
-  }), [panelUserRole, tarifasUserRole, userId, userRole]);
+  }), [panelUserRole, tarifasUserRole, userId]);
 
   const currentAreaTabs = areaTabs[activeArea] ?? [];
 
   const safeActiveTab = currentAreaTabs.some((tab) => tab.key === activeTab)
     ? activeTab
     : currentAreaTabs[0]?.key;
-
-  const hideInnerTabs = activeArea === 'operacion' && userRole === 'owner';
 
   const tabs: TabConfig[] = currentAreaTabs.map((tab) => ({
     key: tab.key,
@@ -105,9 +71,7 @@ export default function AdminPanel() {
   const handleAreaChange = (area: AdminAreaKey) => {
     setActiveArea(area);
     const nextTabs = areaTabs[area] ?? [];
-    if (nextTabs.length > 0) {
-      setActiveTab(nextTabs[0].key);
-    }
+    if (nextTabs.length > 0) setActiveTab(nextTabs[0].key);
   };
 
   if (status === 'loading') {
@@ -124,8 +88,9 @@ export default function AdminPanel() {
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap gap-2">
             {[
-              { key: 'operacion', label: 'Operación' },
-              { key: 'clientes', label: 'Clientes' },
+              { key: 'flujo-operativo', label: 'Flujo Operativo' },
+              { key: 'facturacion', label: 'Facturación' },
+              { key: 'control', label: 'Control' },
               { key: 'infraestructura', label: 'Infraestructura' },
             ].map((area) => (
               <button
@@ -149,12 +114,13 @@ export default function AdminPanel() {
         </div>
 
         <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-          {activeArea === 'operacion' && (userRole === 'owner' ? 'Entrada operativa del owner: iniciar turno y luego continuar con el flujo operativo.' : 'Flujo diario y operativo: facturación, reservas e histórico de cajas.')}
-          {activeArea === 'clientes' && 'Gestión comercial y administrativa de usuarios y abonados.'}
-          {activeArea === 'infraestructura' && 'Configuración estructural de playas, tarifas y base operativa.'}
+          {activeArea === 'flujo-operativo' && 'Inicio de jornada y documentos de playa para la operación diaria.'}
+          {activeArea === 'facturacion' && 'Facturas, abonados, conciliación y cierres sin destinos fiscales paralelos.'}
+          {activeArea === 'control' && 'Resumen operativo e histórico para supervisión y auditoría.'}
+          {activeArea === 'infraestructura' && 'Configuración estructural de playas, tarifas y configuración fiscal canónica.'}
         </div>
 
-        {!hideInnerTabs ? <Tabs tabs={tabs} activeTab={safeActiveTab as TabKey} setActiveTab={setActiveTab} /> : null}
+        {tabs.length > 1 ? <Tabs tabs={tabs} activeTab={safeActiveTab as TabKey} setActiveTab={setActiveTab} /> : null}
       </div>
 
       <div className="dashboard-section p-4 md:p-6">

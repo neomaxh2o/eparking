@@ -1,6 +1,16 @@
 // interfaces para AdminPanel
 
-export type TabKey = 'users' | 'parkings' | 'reservations' | 'tarifas' | 'historico-cajas' | 'abonados' | 'facturacion';
+export type TabKey =
+  | 'flujo-operativo'
+  | 'facturacion'
+  | 'control'
+  | 'infraestructura'
+  | 'users'
+  | 'parkings'
+  | 'reservations'
+  | 'tarifas'
+  | 'historico-cajas'
+  | 'abonados';
 
 export interface TabConfig {
   key: TabKey;
