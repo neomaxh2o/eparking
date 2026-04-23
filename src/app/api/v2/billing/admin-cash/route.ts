@@ -5,8 +5,65 @@ import dbConnect from '@/lib/mongoose';
 import Turno from '@/models/Turno';
 import ParkingLot from '@/models/ParkingLot';
 import User from '@/models/User';
+import Caja from '@/models/Caja';
 import TurnoLiquidacion from '@/models/TurnoLiquidacion';
 import { buildAdminTurnoLiquidacion } from '@/modules/admin-caja/server/admin-turno-liquidacion';
+
+const ADMIN_CASH_TIPO_PRIORITY: Record<string, number> = {
+  administrativa: 0,
+  mixta: 1,
+  operativa: 2,
+};
+
+type CajaCandidate = {
+  _id: string;
+  parkinglotId: string;
+  numero: number;
+  code: string;
+  displayName: string;
+  tipo: string;
+};
+
+async function resolveAllowedParkingIds(userId: string, role: string) {
+  let allowedParkingIds: string[] | null = null;
+
+  if (role === 'owner') {
+    const ownedParkings = await ParkingLot.find({ owner: userId }).select('_id').lean<Record<string, unknown>[]>();
+    allowedParkingIds = ownedParkings.map((p) => String(p._id));
+  } else if (role === 'operator') {
+    const operator = await User.findById(userId).select('assignedParking').lean<Record<string, unknown> | null>();
+    const assigned = Array.isArray(operator?.assignedParking)
+      ? operator.assignedParking
+      : operator?.assignedParking
+        ? [operator.assignedParking]
+        : [];
+    allowedParkingIds = (assigned as unknown[]).map((id) => String(id));
+  }
+
+  return allowedParkingIds;
+}
+
+async function findValidAdminCashCajas(parkinglotId: string): Promise<CajaCandidate[]> {
+  const cajas = await Caja.find({ parkinglotId, activa: true })
+    .select('_id parkinglotId numero code displayName tipo')
+    .lean<Record<string, unknown>[]>();
+
+  return cajas
+    .map((caja) => ({
+      _id: String(caja._id),
+      parkinglotId: String(caja.parkinglotId ?? ''),
+      numero: Number(caja.numero ?? 0),
+      code: String(caja.code ?? ''),
+      displayName: String(caja.displayName ?? caja.code ?? `Caja ${String(caja.numero ?? '')}`),
+      tipo: String(caja.tipo ?? 'operativa'),
+    }))
+    .filter((caja) => caja.numero > 0)
+    .sort((a, b) => {
+      const tipoCompare = (ADMIN_CASH_TIPO_PRIORITY[a.tipo] ?? 99) - (ADMIN_CASH_TIPO_PRIORITY[b.tipo] ?? 99);
+      if (tipoCompare !== 0) return tipoCompare;
+      return a.numero - b.numero;
+    });
+}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -50,32 +107,38 @@ export async function POST(req: NextRequest) {
   const body: unknown = await req.json().catch(() => null);
   const b = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
   const parkinglotId = b?.parkinglotId ? String(b.parkinglotId) : null;
-  const cajaNumero = Number(b?.cajaNumero ?? 1);
+  const requestedCajaNumero = b?.cajaNumero == null || b?.cajaNumero === '' ? null : Number(b.cajaNumero);
 
   if (!parkinglotId) {
     return NextResponse.json({ error: 'parkinglotId es requerido' }, { status: 400 });
   }
 
-  if (!Number.isFinite(cajaNumero) || cajaNumero <= 0) {
-    return NextResponse.json({ error: 'cajaNumero es requerido' }, { status: 400 });
-  }
-
-  let allowedParkingIds: string[] | null = null;
-  if (session.user.role === 'owner') {
-    const ownedParkings = await ParkingLot.find({ owner: session.user.id }).select('_id').lean<Record<string, unknown>[]>();
-    allowedParkingIds = ownedParkings.map((p) => String(p._id));
-  } else if (session.user.role === 'operator') {
-    const operator = await User.findById(session.user.id).select('assignedParking').lean<Record<string, unknown> | null>();
-    const assigned = Array.isArray(operator?.assignedParking)
-      ? operator?.assignedParking
-      : operator?.assignedParking
-        ? [operator.assignedParking]
-        : [];
-    allowedParkingIds = (assigned as unknown[]).map((id) => String(id));
-  }
-
+  const allowedParkingIds = await resolveAllowedParkingIds(session.user.id, session.user.role);
   if (allowedParkingIds && !allowedParkingIds.includes(parkinglotId)) {
     return NextResponse.json({ error: 'La playa indicada no pertenece al alcance del usuario logueado.' }, { status: 403 });
+  }
+
+  const validCajas = await findValidAdminCashCajas(parkinglotId);
+
+  if (!validCajas.length) {
+    return NextResponse.json({ error: 'No hay cajas activas configuradas para esta playa. Configurá una caja administrativa o mixta antes de abrir el turno administrativo.' }, { status: 409 });
+  }
+
+  let selectedCaja: CajaCandidate | null = null;
+
+  if (requestedCajaNumero != null) {
+    if (!Number.isFinite(requestedCajaNumero) || requestedCajaNumero <= 0) {
+      return NextResponse.json({ error: 'cajaNumero debe ser un número válido.' }, { status: 400 });
+    }
+
+    selectedCaja = validCajas.find((caja) => caja.numero === requestedCajaNumero) ?? null;
+    if (!selectedCaja) {
+      return NextResponse.json({ error: 'La caja seleccionada no existe, no pertenece a la playa indicada o está inactiva.' }, { status: 400 });
+    }
+  } else if (validCajas.length === 1) {
+    selectedCaja = validCajas[0];
+  } else {
+    return NextResponse.json({ error: 'Esta playa tiene múltiples cajas activas. Seleccioná una caja válida antes de abrir el turno administrativo.' }, { status: 400 });
   }
 
   const existing = await Turno.findOne({
@@ -86,7 +149,8 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     const existingParkingId = String((existing.parkinglotId ?? existing.assignedParking ?? '') || '');
-    if (existingParkingId === parkinglotId) {
+    const existingCajaNumero = Number(existing.numeroCaja ?? existing.cajaNumero ?? 0);
+    if (existingParkingId === parkinglotId && existingCajaNumero === selectedCaja.numero) {
       return NextResponse.json({ ok: true, turno: existing }, { status: 200 });
     }
     return NextResponse.json({ error: 'Ya existe una caja administrativa abierta para este usuario.', turno: existing }, { status: 409 });
@@ -96,11 +160,11 @@ export async function POST(req: NextRequest) {
     operatorId: session.user.id,
     parkinglotId,
     assignedParking: parkinglotId,
-    numeroCaja: cajaNumero,
-    cajaNumero,
+    numeroCaja: selectedCaja.numero,
+    cajaNumero: selectedCaja.numero,
     estado: 'abierto',
     esCajaAdministrativa: true,
-    observaciones: 'Caja administrativa abierta desde Facturación',
+    observaciones: `Caja administrativa abierta desde Facturación (${selectedCaja.displayName})`,
     fechaApertura: new Date(),
   });
 

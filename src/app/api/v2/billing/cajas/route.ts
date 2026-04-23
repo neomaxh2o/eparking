@@ -3,8 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongoose';
 import ParkingLot from '@/models/ParkingLot';
-import Turno from '@/models/Turno';
+import Caja from '@/models/Caja';
 import User from '@/models/User';
+
+const ADMIN_CASH_TIPO_PRIORITY: Record<string, number> = {
+  administrativa: 0,
+  mixta: 1,
+  operativa: 2,
+};
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -38,31 +44,36 @@ export async function GET(req: NextRequest) {
     allowedParkingIds = [parkinglotId];
   }
 
-  let operatorIds: string[] | null = null;
+  const cajaQuery: Record<string, unknown> = {
+    activa: true,
+  };
 
-  if (allowedParkingIds) {
-    const operators = await User.find({ assignedParking: { $in: allowedParkingIds }, role: 'operator' })
-      .select('_id')
-      .lean<Record<string, unknown>[]>();
-    operatorIds = operators.map((operator) => String(operator._id));
+  if (allowedParkingIds?.length) {
+    cajaQuery.parkinglotId = { $in: allowedParkingIds };
   }
 
-  const turnoQuery: Record<string, unknown> = {};
-  if (session.user.role === 'operator') {
-    turnoQuery.operatorId = session.user.id;
-  } else if (operatorIds) {
-    turnoQuery.operatorId = { $in: operatorIds };
-  }
+  const cajas = await Caja.find(cajaQuery)
+    .select('_id parkinglotId numero code displayName tipo activa')
+    .lean<Record<string, unknown>[]>();
 
-  const turnos = await Turno.find(turnoQuery).select('numeroCaja cajaNumero operatorId').lean<Record<string, unknown>[]>();
+  const items = cajas
+    .map((caja) => ({
+      _id: String(caja._id),
+      parkinglotId: String(caja.parkinglotId ?? ''),
+      numero: Number(caja.numero ?? 0),
+      code: String(caja.code ?? ''),
+      displayName: String(caja.displayName ?? caja.code ?? `Caja ${String(caja.numero ?? '')}`),
+      tipo: String(caja.tipo ?? 'operativa'),
+      activa: Boolean(caja.activa ?? true),
+    }))
+    .filter((caja) => caja.numero > 0)
+    .sort((a, b) => {
+      const parkingCompare = a.parkinglotId.localeCompare(b.parkinglotId);
+      if (parkingCompare !== 0) return parkingCompare;
+      const tipoCompare = (ADMIN_CASH_TIPO_PRIORITY[a.tipo] ?? 99) - (ADMIN_CASH_TIPO_PRIORITY[b.tipo] ?? 99);
+      if (tipoCompare !== 0) return tipoCompare;
+      return a.numero - b.numero;
+    });
 
-  const cajas = Array.from(
-    new Set(
-      turnos
-        .map((turno) => Number((turno.numeroCaja ?? turno.cajaNumero ?? 0) as unknown as number))
-        .filter((value) => Number.isFinite(value) && value > 0),
-    ),
-  ).sort((a, b) => a - b);
-
-  return NextResponse.json(cajas.map((numero) => ({ numero })), { status: 200 });
+  return NextResponse.json(items, { status: 200 });
 }
