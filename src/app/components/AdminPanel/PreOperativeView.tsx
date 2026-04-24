@@ -87,7 +87,7 @@ export default function PreOperativeView({ selectedParkingId, parkingName, parki
           {opening ? 'Iniciando turno...' : 'Iniciar turno'}
         </button>
         <div className="rounded-xl border border-amber-300 bg-white/70 px-4 py-2.5 text-xs text-amber-900">
-          Al iniciar turno se habilita el entorno operativo de la jornada.
+          El turno usa una caja administrativa real. Si no existe, creala primero desde Flujo Operativo.
         </div>
       </div>
 

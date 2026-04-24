@@ -89,6 +89,7 @@ export default function PanelFlujoOperativo() {
   const [lastLiquidacion, setLastLiquidacion] = useState<TurnoLiquidacionSnapshot | null>(null);
   const [loadingAdminCash, setLoadingAdminCash] = useState(false);
   const [openingCaja, setOpeningCaja] = useState(false);
+  const [creatingCaja, setCreatingCaja] = useState(false);
   const [liquidatingCaja, setLiquidatingCaja] = useState(false);
   const [documents, setDocuments] = useState<BillingDocument[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -102,7 +103,7 @@ export default function PanelFlujoOperativo() {
     [cajaNumero, cajasDisponibles],
   );
   const hasCajaConfig = cajaCount > 0;
-  const canOpenCaja = Boolean(parkinglotId) && Boolean(cajaNumero) && !turnoAbierto && !openingCaja && hasCajaConfig;
+  const canOpenCaja = Boolean(parkinglotId) && Boolean(cajaNumero) && !turnoAbierto && !openingCaja && !creatingCaja && hasCajaConfig;
   const canLiquidarCaja = Boolean(adminCashTurno?._id) && !liquidatingCaja;
 
   const fetchBillingParkings = async () => {
@@ -120,7 +121,7 @@ export default function PanelFlujoOperativo() {
     }
   };
 
-  const fetchCajasDisponibles = async (nextParkinglotId?: string) => {
+  const fetchCajasDisponibles = async (nextParkinglotId?: string, preferredCajaNumero?: string | null) => {
     try {
       const params = new URLSearchParams();
       if (nextParkinglotId) params.set('parkinglotId', nextParkinglotId);
@@ -129,14 +130,18 @@ export default function PanelFlujoOperativo() {
       const arr = Array.isArray(data) ? (data as CajaOption[]) : [];
       setCajasDisponibles(arr);
       setCajaNumero((prev) => {
+        const preferred = preferredCajaNumero ? String(preferredCajaNumero) : '';
         if (!arr.length) return '';
+        if (preferred && arr.some((caja) => String(caja.numero) === preferred)) return preferred;
         if (prev && arr.some((caja) => String(caja.numero) === prev)) return prev;
         if (arr.length === 1) return String(arr[0].numero);
-        return '';
+        return String(arr[0].numero);
       });
+      return arr;
     } catch {
       setCajasDisponibles([]);
       setCajaNumero('');
+      return [] as CajaOption[];
     }
   };
 
@@ -215,9 +220,41 @@ export default function PanelFlujoOperativo() {
     pagados: documents.filter((d) => d.estado === 'pagada').length,
   }), [documents]);
 
+  const crearCajaAdministrativa = async () => {
+    if (!parkinglotId) {
+      setError('Seleccioná una playa antes de crear la caja administrativa.');
+      return;
+    }
+
+    try {
+      setCreatingCaja(true);
+      setError(null);
+      setMessage(null);
+      const res = await fetch('/api/v2/billing/cajas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parkinglotId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo crear la caja administrativa');
+
+      const createdCajaNumero = String(data?.caja?.numero ?? '');
+      await fetchCajasDisponibles(parkinglotId, createdCajaNumero || null);
+      await fetchAdminCashTurno(parkinglotId);
+      setLastClosedTurno(null);
+      setLastLiquidacion(null);
+      setError(null);
+      setMessage(data?.created ? 'Caja administrativa creada correctamente. Ya podés abrir el turno.' : 'La playa ya tenía una caja administrativa activa. Ya podés abrir el turno.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Error desconocido'));
+    } finally {
+      setCreatingCaja(false);
+    }
+  };
+
   const abrirCajaAdministrativa = async () => {
     if (!parkinglotId) return setError('Seleccioná una playa para iniciar la jornada.');
-    if (!cajasDisponibles.length) return setError('La playa seleccionada no tiene cajas activas configuradas para este flujo.');
+    if (!cajasDisponibles.length) return setError('Primero creá una caja administrativa para esta playa.');
     if (!cajaNumero) return setError(cajasDisponibles.length > 1 ? 'Seleccioná una caja para abrir el turno administrativo.' : 'No hay una caja válida disponible para abrir el turno administrativo.');
 
     try {
@@ -351,7 +388,7 @@ export default function PanelFlujoOperativo() {
           <Tab.Panels className="mt-6 space-y-6">
             <Tab.Panel className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings || openingCaja || liquidatingCaja || turnoAbierto}>
+                <select value={parkinglotId} onChange={(e) => setParkinglotId(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={loadingParkings || openingCaja || creatingCaja || liquidatingCaja || turnoAbierto}>
                   <option value="">Seleccionar playa operativa</option>
                   {parkings.map((parking) => <option key={parking._id} value={parking._id}>{parking.name}</option>)}
                 </select>
@@ -361,7 +398,7 @@ export default function PanelFlujoOperativo() {
                   </div>
                 ) : cajaCount === 0 ? (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    Esta playa no tiene cajas activas configuradas para el flujo administrativo.
+                    Esta playa no tiene caja administrativa activa. Creala para habilitar la apertura del turno.
                   </div>
                 ) : cajaCount === 1 ? (
                   <div className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-700">
@@ -370,20 +407,27 @@ export default function PanelFlujoOperativo() {
                     <p className="text-xs text-gray-500">Tipo: {selectedCaja?.tipo || 'administrativa'} · N° {selectedCaja?.numero ?? '-'}</p>
                   </div>
                 ) : (
-                  <select value={cajaNumero} onChange={(e) => setCajaNumero(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={turnoAbierto || openingCaja || liquidatingCaja}>
+                  <select value={cajaNumero} onChange={(e) => setCajaNumero(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-3" disabled={turnoAbierto || openingCaja || creatingCaja || liquidatingCaja}>
                     <option value="">Seleccionar caja</option>
                     {cajasDisponibles.map((caja) => <option key={caja._id || caja.numero} value={String(caja.numero)}>{caja.displayName || `Caja ${caja.numero}`} · {caja.tipo || 'operativa'}</option>)}
                   </select>
                 )}
                 <div className="flex flex-wrap gap-3">
+                  {cajaCount === 0 && !turnoAbierto ? (
+                    <button onClick={() => void crearCajaAdministrativa()} disabled={!parkinglotId || creatingCaja || openingCaja || liquidatingCaja} className="rounded-xl border border-blue-300 bg-blue-50 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
+                      {creatingCaja ? 'Creando...' : 'Crear caja administrativa'}
+                    </button>
+                  ) : null}
                   {!turnoAbierto ? (
                     <button onClick={() => void abrirCajaAdministrativa()} disabled={!canOpenCaja} className="rounded-xl border border-gray-300 bg-gray-200 px-5 py-3 font-semibold text-gray-800 hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50">
                       {openingCaja ? 'Abriendo...' : 'Abrir caja/turno'}
                     </button>
                   ) : null}
-                  <button onClick={() => void liquidarCajaAdministrativa()} disabled={!canLiquidarCaja} className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-3 font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">
-                    {liquidatingCaja ? 'Liquidando...' : 'Liquidar y cerrar'}
-                  </button>
+                  {turnoAbierto ? (
+                    <button onClick={() => void liquidarCajaAdministrativa()} disabled={!canLiquidarCaja} className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-3 font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">
+                      {liquidatingCaja ? 'Liquidando...' : 'Liquidar y cerrar'}
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
@@ -394,7 +438,7 @@ export default function PanelFlujoOperativo() {
               ) : null}
               {!turnoAbierto && parkinglotId && cajaCount === 0 ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                  No se puede abrir el turno administrativo porque la playa seleccionada no tiene cajas activas disponibles.
+                  No se puede abrir el turno administrativo porque la playa seleccionada todavía no tiene una caja administrativa real.
                 </div>
               ) : null}
 
@@ -434,6 +478,8 @@ export default function PanelFlujoOperativo() {
                       El turno quedó cerrado. Para continuar operando en esta misma playa, abrí un nuevo caja/turno.
                     </div>
                   </div>
+                ) : cajaCount === 0 && parkinglotId ? (
+                  <p>Sin caja administrativa configurada para la playa seleccionada. Creala desde este panel para habilitar la jornada.</p>
                 ) : (
                   <p>Sin caja administrativa abierta para la playa seleccionada. Podés abrir una nueva para comenzar o reanudar la jornada.</p>
                 )}

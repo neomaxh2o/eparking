@@ -1,18 +1,42 @@
 export const DEBUG_PARKING = !!process.env.DEBUG_PARKING;
 
+type CajaDisponible = {
+  _id: string;
+  parkinglotId: string;
+  numero: number;
+  code?: string;
+  displayName?: string;
+  tipo?: string;
+  activa?: boolean;
+};
+
+async function resolveCajaAdministrativaNumero(parkinglotId: string, requestedCajaNumero?: number | null) {
+  if (requestedCajaNumero != null && requestedCajaNumero !== 0) return Number(requestedCajaNumero);
+
+  const res = await fetch(`/api/v2/billing/cajas?parkinglotId=${encodeURIComponent(parkinglotId)}`, {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.error || 'Error fetching cajas');
+
+  const cajas = Array.isArray(json) ? (json as CajaDisponible[]) : [];
+  const cajasValidas = cajas
+    .filter((caja) => caja?.activa !== false)
+    .filter((caja) => ['administrativa', 'mixta'].includes(String(caja?.tipo ?? 'operativa')))
+    .sort((a, b) => a.numero - b.numero);
+
+  if (!cajasValidas.length) {
+    throw new Error('No hay caja administrativa activa para esta playa. Creala primero desde Flujo Operativo.');
+  }
+
+  return Number(cajasValidas[0].numero);
+}
+
 export async function createCajaAdministrativa({ parkinglotId, cajaNumero, operatorName }: { parkinglotId: string; cajaNumero?: number | null; operatorName?: string }) {
   if (DEBUG_PARKING) console.debug('createCajaAdministrativa', { parkinglotId, cajaNumero, operatorName });
-  // If cajaNumero not provided, derive from parkinglotId using digit-only last-5 rule (fallback automatic)
-  let effectiveCaja = cajaNumero ?? null;
-  if ((effectiveCaja == null || effectiveCaja === '') && parkinglotId) {
-    try {
-      const digits = String(parkinglotId).replace(/\D/g, '');
-      const last5 = digits.slice(-5);
-      effectiveCaja = last5 ? Number(last5) : 1;
-    } catch (e) {
-      effectiveCaja = 1;
-    }
-  }
+
+  const effectiveCaja = await resolveCajaAdministrativaNumero(parkinglotId, cajaNumero);
 
   const res = await fetch('/api/v2/billing/admin-cash', {
     method: 'POST',
